@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: shopBanDo-api
+  datasource:
+    url: jdbc:mysql://localhost:3306/shopBanDo?createDatabaseIfNotExist=true
+    username: root
+    password: Khai8101111@
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+jwt:
+  signerKey: QSteYc1j62GRm00tZnCI3Xj/s3s28uVxr51yA3zl6Aa53UqaO9XeLS65XuKtAA2E
