@@ -1,10 +1,12 @@
 spring:
   application:
     name: shopBanDo-api
+
   datasource:
     url: jdbc:mysql://localhost:3306/shopBanDo?createDatabaseIfNotExist=true
     username: root
     password: Khai8101111@
+
   jpa:
     show-sql: true
     hibernate:
