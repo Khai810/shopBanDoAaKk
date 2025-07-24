@@ -1,6 +1,10 @@
 package com.projectshopbando.shopbandoapi.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -8,9 +12,14 @@ import java.util.List;
 
 @Entity
 @Table(name = "products")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@Data
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id")
     private String id;
 
     @Column(name = "name")
@@ -25,11 +34,14 @@ public class Product {
     @Column(name = "price")
     private BigDecimal price;
 
-    @Column(name = "is_available")
-    private boolean available;
-
     @Column(name = "is_instock")
-    private boolean inStock;
+    private Boolean inStock;
+
+    @Column(name = "is_available")
+    private Boolean available;
+
+    @Column(name = "thumbnail")
+    private String thumbnail;
 
     @ManyToOne()
     @JoinColumn(name = "category_id", nullable = false)
@@ -41,7 +53,9 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductSize> sizes;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @PrePersist
