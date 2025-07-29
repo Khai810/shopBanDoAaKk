@@ -12,8 +12,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CategoryRes {
-    private String id;
+    private Long id;
     private String name;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
