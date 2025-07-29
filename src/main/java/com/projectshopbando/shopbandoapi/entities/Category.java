@@ -1,11 +1,10 @@
 package com.projectshopbando.shopbandoapi.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +15,17 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Data
-public class Category {
+public class Category implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private String id;
+    private Long id;
 
     @Column(name = "name")
     private String name;
 
     @OneToMany(mappedBy = "category",cascade = CascadeType.REMOVE)
+    @JsonManagedReference
     private List<Product> products = new ArrayList<>();
 
     @Column(name = "created_at")
