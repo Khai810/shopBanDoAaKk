@@ -6,13 +6,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "product_images")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
-public class ProductImage {
+public class ProductImage implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;

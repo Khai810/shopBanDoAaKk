@@ -6,16 +6,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "product_sizes")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
-public class ProductSize {
+public class ProductSize implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String size;
     private Integer quantity;

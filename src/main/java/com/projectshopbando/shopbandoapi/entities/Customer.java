@@ -3,9 +3,11 @@ package com.projectshopbando.shopbandoapi.entities;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -13,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -25,7 +28,7 @@ public class Customer {
     private String address;
 
     @OneToMany(mappedBy = "customer")
-    private List<Order> orders;
+    private List<Order> orders = new ArrayList<>();
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

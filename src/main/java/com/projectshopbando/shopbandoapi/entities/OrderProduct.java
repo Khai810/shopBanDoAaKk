@@ -1,9 +1,7 @@
 package com.projectshopbando.shopbandoapi.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -12,6 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Data
 public class OrderProduct {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -30,4 +29,13 @@ public class OrderProduct {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
+
+    @PrePersist
+    protected void calcTotalPrice() {
+        if(unitPrice != null && quantity != null) {
+            this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        } else {
+            this.totalPrice = BigDecimal.ZERO;
+        }
+    }
 }

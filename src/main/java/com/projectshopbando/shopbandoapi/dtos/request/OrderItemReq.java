@@ -9,10 +9,12 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class ProductSizeDTO {
-    @NotBlank(message = "size must not be empty")
+@NoArgsConstructor
+public class OrderItemReq {
+    @NotNull(message = "productId must not be empty")
+    private Long productId;
+    @NotBlank(message = "Product size must not be empty")
     private String size;
     @NotNull(message = "quantity must not be empty")
     private Integer quantity;
