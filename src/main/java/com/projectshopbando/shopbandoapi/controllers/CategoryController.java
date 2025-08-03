@@ -4,7 +4,6 @@ import com.projectshopbando.shopbandoapi.dtos.request.CategoryCreateReq;
 import com.projectshopbando.shopbandoapi.dtos.response.ResponseObject;
 import com.projectshopbando.shopbandoapi.mappers.CategoryMapper;
 import com.projectshopbando.shopbandoapi.services.CategoryService;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
