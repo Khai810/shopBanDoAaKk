@@ -1,5 +1,6 @@
 package com.projectshopbando.shopbandoapi;
 
+import com.projectshopbando.shopbandoapi.config.VnPayConfig;
 import com.projectshopbando.shopbandoapi.dtos.request.CreateCustomerReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderReq;
 import com.projectshopbando.shopbandoapi.dtos.request.OrderItemReq;
@@ -10,6 +11,7 @@ import com.projectshopbando.shopbandoapi.repositories.CategoryRepository;
 import com.projectshopbando.shopbandoapi.repositories.ProductRepository;
 import com.projectshopbando.shopbandoapi.repositories.ProductSizeRepository;
 import com.projectshopbando.shopbandoapi.services.OrderService;
+import com.projectshopbando.shopbandoapi.services.VNPayIpnHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -17,13 +19,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static com.projectshopbando.shopbandoapi.config.VnPayConfig.secretKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
@@ -39,6 +43,9 @@ public class CreateOrderConcurrencyTest {
     private Long productId;
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private VNPayIpnHandler ipnHandler;
 
     @BeforeEach
     public void setUpProductWithStock(){
@@ -71,21 +78,22 @@ public class CreateOrderConcurrencyTest {
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         List<Future<String>> results = new ArrayList<>();
-
+        List<String> orderedIds = new ArrayList<>();
         for (int i = 0; i < threadCount; i++) {
             int finalI = i;
             Future<String> future = executor.submit(() -> {
                 try {
                     CreateCustomerReq customerReq =
                             new CreateCustomerReq("User " + finalI, "lastName" + finalI
-                                    , "u" + finalI + "@mail.com", "0900000" + finalI, "0900000" + finalI);
+                                    , "u" + finalI + "@mail.com", "0900000" + finalI, "0123123123", "ip"+ finalI);
 
                     CreateOrderReq orderReq = new CreateOrderReq(
                             List.of(new OrderItemReq(productId, "M", 1)) // quantity 1
-                            ,"MOMO", "note"+ finalI
+                            ,"VNPAY", "note"+ finalI
                     );
 
-                    orderService.createOrder(customerReq, orderReq);
+                    var orders = orderService.createOrder(customerReq, orderReq);
+                    orderedIds.add(orders.getOrder().getId());
                     System.out.println("-----------------------------------");
                     return "✅ SUCCESS " + finalI;
                 } catch (Exception e) {
@@ -112,6 +120,38 @@ public class CreateOrderConcurrencyTest {
         ProductSize sizeM = productSizeRepository.findByProductIdAndSize(productId, "M")
                 .orElseThrow();
         assertEquals(0, sizeM.getQuantity());
+
+        String responseCode = "00";
+        for(String orderedId : orderedIds) {
+            Map<String, String> params = new HashMap<>();
+            params.put("vnp_ResponseCode", responseCode);
+            params.put("vnp_TxnRef", orderedId);
+            params.put("vnp_Amount", "30000000");
+            List<String> fieldNames = new ArrayList<>(params.keySet());
+            Collections.sort(fieldNames);
+
+            StringBuilder hashData = new StringBuilder();
+
+            var itr = fieldNames.iterator();
+            while (itr.hasNext()) {
+                var fieldName = itr.next();
+                var fieldValue = params.get(fieldName);
+                if ((fieldValue != null) && (!fieldValue.isEmpty())) {
+                    //Build hash data
+                    hashData.append(fieldName);
+                    hashData.append("=");
+                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII));
+                    if (itr.hasNext()) {
+                        hashData.append("&");
+                    }
+                }
+            }
+            String secureHash = VnPayConfig.hmacSHA512(secretKey, hashData.toString());
+            params.put("vnp_SecureHash", secureHash);
+//            System.out.println("vnp_ResponseCode: " + itrr);
+            var res = ipnHandler.ipnHandler(params);
+            System.out.println("ipnHandler: " + res);
+        }
     }
 
 }
