@@ -65,7 +65,6 @@ public class ProductService {
 
     @Transactional
     public void decreaseProductSizeQuantity(Long productId, String productSize, int quantity) throws BadRequestException {
-
         String redisKey = String.format("product:%s:size:%s", productId, productSize);
         Integer sizeQuantity = redisTemplate.opsForValue().get(redisKey);
         if(sizeQuantity != null){
@@ -77,6 +76,13 @@ public class ProductService {
         ProductSize sizeEntity = productSizeRepository.findForUpdate(productId, productSize, quantity)
                 .orElseThrow(() -> new BadRequestException("Not enough stock for size" + productSize));
         sizeEntity.setQuantity(sizeEntity.getQuantity() - quantity);
-        redisTemplate.opsForValue().set(redisKey, sizeEntity.getQuantity(), Duration.ofMinutes(5));
+        redisTemplate.opsForValue().set(redisKey, sizeEntity.getQuantity(), Duration.ofMinutes(2));
+    }
+
+    @Transactional
+    public void increaseProductSizeQuantity(Long productId, String size, int quantity) throws BadRequestException {
+        ProductSize productSize = productSizeRepository.findByProductIdAndSize(productId, size)
+                .orElseThrow(() -> new NotFoundException("Product size not found with id: " + productId + "size: " + size));
+        productSize.setQuantity(productSize.getQuantity() + quantity);
     }
 }

@@ -2,7 +2,7 @@ package com.projectshopbando.shopbandoapi.mappers;
 
 import com.projectshopbando.shopbandoapi.dtos.response.OrderProductRes;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderResPayload;
-import com.projectshopbando.shopbandoapi.dtos.response.OrderResponse;
+import com.projectshopbando.shopbandoapi.dtos.response.OrderDto;
 import com.projectshopbando.shopbandoapi.entities.Order;
 import com.projectshopbando.shopbandoapi.entities.OrderProduct;
 import org.mapstruct.Mapper;
@@ -14,7 +14,7 @@ import java.util.List;
 public interface OrderMapper {
 
     @Mapping(target = "orderedProduct", source = "orderedProduct")
-    OrderResponse toOrderResponse(Order order);
+    OrderDto toOrderDto(Order order);
 
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
@@ -22,9 +22,9 @@ public interface OrderMapper {
 
     List<OrderProductRes> toOrderProductResponseList(List<OrderProduct> orderedProduct);
 
-    List<OrderResponse> toOrderResponseList(List<Order> order);
+//    List<OrderResponse> toOrderResponseList(List<Order> order);
 
-    @Mapping(target = "order", expression = "java(toOrderResponse(order))")
+    @Mapping(target = "order", expression = "java(toOrderDto(order))")
     OrderResPayload toOrderResPayload(Order order);
 
     List<OrderResPayload> toOrderResPayloadList(List<Order> order);

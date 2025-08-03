@@ -23,4 +23,6 @@ public class CreateCustomerReq {
     @NotBlank(message = "Customer phone number must not be blank")
     @Size(min = 10, message = "Phone number must be at least 10 digits")
     private String phone;
+
+    private String ipAddress;
 }

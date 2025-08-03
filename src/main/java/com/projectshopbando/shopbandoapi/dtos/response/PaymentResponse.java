@@ -5,7 +5,6 @@ import lombok.Data;
 
 @Data
 @Builder
-public class OrderResponse {
-    private OrderDto order;
-    private PaymentResponse payment;
+public class PaymentResponse {
+    private String paymentUrl;
 }
