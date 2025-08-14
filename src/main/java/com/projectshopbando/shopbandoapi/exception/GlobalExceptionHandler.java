@@ -44,6 +44,9 @@ public class GlobalExceptionHandler {
                 .body(res);
     }
 
+//    @ExceptionHandler(G)
+
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ResponseObject<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
         List<String> errorMessages = ex.getBindingResult()

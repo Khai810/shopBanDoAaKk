@@ -15,6 +15,10 @@ import java.util.List;
 @NoArgsConstructor
 public class OrderDto {
     private String id;
+    private String recipientName;
+    private String recipientPhone;
+    private String recipientEmail;
+    private String recipientAddress;
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;
     private String paymentMethod;

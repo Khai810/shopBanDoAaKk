@@ -1,7 +1,6 @@
 package com.projectshopbando.shopbandoapi;
 
 import com.projectshopbando.shopbandoapi.config.VnPayConfig;
-import com.projectshopbando.shopbandoapi.dtos.request.CreateCustomerReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderReq;
 import com.projectshopbando.shopbandoapi.dtos.request.OrderItemReq;
 import com.projectshopbando.shopbandoapi.entities.Category;
@@ -11,12 +10,15 @@ import com.projectshopbando.shopbandoapi.repositories.CategoryRepository;
 import com.projectshopbando.shopbandoapi.repositories.ProductRepository;
 import com.projectshopbando.shopbandoapi.repositories.ProductSizeRepository;
 import com.projectshopbando.shopbandoapi.services.OrderService;
+import com.projectshopbando.shopbandoapi.services.UserService;
 import com.projectshopbando.shopbandoapi.services.VNPayIpnHandler;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -40,12 +42,15 @@ public class CreateOrderConcurrencyTest {
     @Autowired
     private ProductSizeRepository productSizeRepository;
 
+//    private String userId;
     private Long productId;
     @Autowired
     private CategoryRepository categoryRepository;
 
     @Autowired
     private VNPayIpnHandler ipnHandler;
+    @Autowired
+    private UserService userService;
 
     @BeforeEach
     public void setUpProductWithStock(){
@@ -70,6 +75,11 @@ public class CreateOrderConcurrencyTest {
                 .quantity(20)
                 .build();
         productSizeRepository.save(productSize);
+//        CreateUserReq req = new CreateUserReq("fullName userTest", "userTest" + "@mail.com"
+//                , "0123123123", LocalDate.now().minusDays(20)
+//                , "user" + "userTest", "password" + "userTest");
+//        User user = userService.createUser(req);
+//        userId = user.getId();
     }
     @Test
     public void testConcurrentOrder_ShouldNotOversell() throws InterruptedException {
@@ -83,16 +93,14 @@ public class CreateOrderConcurrencyTest {
             int finalI = i;
             Future<String> future = executor.submit(() -> {
                 try {
-                    CreateCustomerReq customerReq =
-                            new CreateCustomerReq("User " + finalI, "lastName" + finalI
-                                    , "u" + finalI + "@mail.com", "0900000" + finalI, "0123123123", "ip"+ finalI);
-
                     CreateOrderReq orderReq = new CreateOrderReq(
+                            null,"fullName" + finalI,"0123123123",finalI + "@mail.com", "address" + finalI,
                             List.of(new OrderItemReq(productId, "M", 1)) // quantity 1
                             ,"VNPAY", "note"+ finalI
                     );
+                    HttpServletRequest request = new MockHttpServletRequest();
 
-                    var orders = orderService.createOrder(customerReq, orderReq);
+                    var orders = orderService.createOrder(orderReq, request);
                     orderedIds.add(orders.getOrder().getId());
                     System.out.println("-----------------------------------");
                     return "✅ SUCCESS " + finalI;

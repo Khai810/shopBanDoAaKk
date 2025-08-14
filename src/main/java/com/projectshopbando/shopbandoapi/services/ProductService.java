@@ -1,6 +1,7 @@
 package com.projectshopbando.shopbandoapi.services;
 
 import com.projectshopbando.shopbandoapi.dtos.request.ProductCreateRequest;
+import com.projectshopbando.shopbandoapi.dtos.request.UpdateProductReq;
 import com.projectshopbando.shopbandoapi.entities.Category;
 import com.projectshopbando.shopbandoapi.entities.Product;
 import com.projectshopbando.shopbandoapi.entities.ProductSize;
@@ -41,9 +42,9 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public List<Product> getAllProduct() {
-        return productRepository.findAll()
-                .stream().toList();
+    public Page<Product> getAllProduct(int page, int size, String name, Long categoryId, Boolean available) {
+        Pageable pageable = PageRequest.of(page, size);
+        return productRepository.adminFindAll(name, categoryId, available, pageable);
     }
 
     @Cacheable(value = "landingProducts")
@@ -53,6 +54,11 @@ public class ProductService {
     }
 
     public Product getProductById(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+    }
+
+    public Product getProductByIdAndAvailableTrue(Long id) {
         return productRepository.findByIdAndAvailableTrue(id)
                         .orElseThrow(() -> new NotFoundException("Product not found with id: " + id));
     }
@@ -80,9 +86,31 @@ public class ProductService {
     }
 
     @Transactional
-    public void increaseProductSizeQuantity(Long productId, String size, int quantity) throws BadRequestException {
+    public void increaseProductSizeQuantity(Long productId, String size, int quantity) {
         ProductSize productSize = productSizeRepository.findByProductIdAndSize(productId, size)
                 .orElseThrow(() -> new NotFoundException("Product size not found with id: " + productId + "size: " + size));
         productSize.setQuantity(productSize.getQuantity() + quantity);
+    }
+
+    @Transactional
+    public Product updateProduct(Long id, UpdateProductReq request) {
+        Product product = getProductById(id);
+        product.getSizes().clear();
+        product.getImageUrls().clear();
+        productMapper.toUpdateProduct(product, request);
+        product.getSizes().addAll(productMapper.toProductSizes(request.getSizes(), product));
+        product.getImageUrls().addAll(productMapper.toProductImages(request.getImageUrls(), product));
+
+        Category category = categoryService.getCategoryById(request.getCategoryId());
+        product.setCategory(category);
+
+        return productRepository.save(product);
+    }
+
+    public void disableProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
+        product.setAvailable(false);
+        productRepository.save(product);
     }
 }

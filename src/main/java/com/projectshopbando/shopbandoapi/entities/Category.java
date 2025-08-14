@@ -24,6 +24,9 @@ public class Category implements Serializable {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "description")
+    private String description;
+
     @OneToMany(mappedBy = "category",cascade = CascadeType.REMOVE)
     @JsonManagedReference
     private List<Product> products = new ArrayList<>();

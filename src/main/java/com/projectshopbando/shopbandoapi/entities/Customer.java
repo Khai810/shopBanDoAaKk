@@ -2,9 +2,9 @@ package com.projectshopbando.shopbandoapi.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -12,17 +12,18 @@ import java.util.List;
 
 @Entity
 @Table(name = "customers")
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "customer_type")
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @Data
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String firstName;
-    private String lastName;
+    private String fullName;
     private String email;
     private String phone;
     private String address;

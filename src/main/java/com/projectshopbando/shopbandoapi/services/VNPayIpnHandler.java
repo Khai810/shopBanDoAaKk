@@ -6,7 +6,6 @@ import com.projectshopbando.shopbandoapi.entities.Order;
 import com.projectshopbando.shopbandoapi.enums.IpnResConst;
 import com.projectshopbando.shopbandoapi.enums.OrderStatus;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,7 +18,6 @@ import java.util.Map;
 
 import static com.projectshopbando.shopbandoapi.config.VnPayConfig.secretKey;
 
-@Slf4j
 @RequiredArgsConstructor
 @Service
 public class VNPayIpnHandler {
@@ -27,7 +25,6 @@ public class VNPayIpnHandler {
 
     public IpnRes ipnHandler(Map<String, String> params) {
         try {
-            log.info("VN Pay IPN handler", params);
             String vnp_SecureHash = params.get("vnp_SecureHash");
             params.remove("vnp_SecureHashType");
             params.remove("vnp_SecureHash");
@@ -57,7 +54,6 @@ public class VNPayIpnHandler {
             if (!secureHash.equals(vnp_SecureHash)) {
                 return IpnResConst.INVALID_CHECKSUM;
             }
-            log.info("vnp_TxnRef: " + params.get("vnp_TxnRef"));
             String responseCode = params.get("vnp_ResponseCode");
             String orderId = params.get("vnp_TxnRef");
             BigDecimal amount = BigDecimal.valueOf(Long.parseLong(params.get("vnp_Amount"))).divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
@@ -76,12 +72,10 @@ public class VNPayIpnHandler {
             }
 
             if (responseCode.equals("00")) {
-                orderService.updateOrderStatus(order, OrderStatus.PAID);
-                log.info("VN Pay IPN handler successful");
+                orderService.updateOrderStatus(order, OrderStatus.PREPARING);
                 return IpnResConst.SUCCESS;
             } else {
                 orderService.cancelOrder(orderId);
-                log.info("VN Pay IPN handler canceled");
                 return IpnResConst.SUCCESS;
             }
         } catch (Exception e) {

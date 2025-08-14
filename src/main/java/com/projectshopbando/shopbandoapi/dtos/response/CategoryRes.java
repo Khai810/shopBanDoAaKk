@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @AllArgsConstructor
@@ -14,4 +12,5 @@ import java.time.LocalDateTime;
 public class CategoryRes {
     private Long id;
     private String name;
+    private String description;
 }

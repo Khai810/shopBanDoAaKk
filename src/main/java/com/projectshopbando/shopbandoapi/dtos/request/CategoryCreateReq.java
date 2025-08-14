@@ -7,4 +7,6 @@ import lombok.Data;
 public class CategoryCreateReq {
     @NotBlank(message = "Category name must not empty")
     private String name;
+
+    private String description;
 }

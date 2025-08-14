@@ -24,6 +24,14 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    private String recipientName;
+
+    private String recipientPhone;
+
+    private String recipientEmail;
+
+    private String recipientAddress;
+
     private LocalDateTime orderDate;
 
     private BigDecimal totalAmount;

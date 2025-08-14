@@ -1,8 +1,6 @@
 package com.projectshopbando.shopbandoapi.controllers;
 
-import com.projectshopbando.shopbandoapi.config.VnPayConfig;
-import com.projectshopbando.shopbandoapi.dtos.request.CreateCustomerReq;
-import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderPayload;
+import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderReq;
 import com.projectshopbando.shopbandoapi.dtos.response.ResponseObject;
 import com.projectshopbando.shopbandoapi.mappers.OrderMapper;
 import com.projectshopbando.shopbandoapi.services.OrderService;
@@ -12,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,34 +30,43 @@ public class OrderController {
                         .build());
     }
 
-    @GetMapping()
-    public ResponseEntity<ResponseObject<?>> getAllOrder(){
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin")
+    public ResponseEntity<ResponseObject<?>> getAllOrder(
+            @RequestParam int page
+            , @RequestParam int size
+            , @RequestParam(required = false) String search
+            , @RequestParam(required = false) String status) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
-                        .data(orderMapper.toOrderResPayloadList(
-                                orderService.getAllOrder()))
+                        .data(orderService.getAllOrder(page, size, search, status).map(orderMapper::toOrderDto))
                         .build());
     }
 
+//    @PostAuthorize("returnObject.body.data.customer.id == authentication.name")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject<?>> getOrderById(@PathVariable String id){
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
-                        .data(orderMapper.toOrderResPayload(
+                        .data(orderMapper.toOrderDto(
                                 orderService.getOrderById(id)))
                         .build());
     }
 
-    @PostMapping()
-    public ResponseEntity<ResponseObject<?>> createOrder(@RequestBody @Valid CreateOrderPayload payload, HttpServletRequest request) throws BadRequestException {
-        String ipAdress = VnPayConfig.getIpAddress(request);
-        CreateCustomerReq customerReq = payload.getCustomerReq();
-        customerReq.setIpAddress(ipAdress);
+    @GetMapping("/customers")
+    public ResponseEntity<ResponseObject<?>> getOrderByCustomerId(@RequestParam String customerId){
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(orderService.getOrderByCustomerId(customerId).stream().map(orderMapper::toOrderDto).toList())
+                        .build());
+    }
 
+    @PostMapping()
+    public ResponseEntity<ResponseObject<?>> createOrder(@RequestBody @Valid CreateOrderReq orderRequest, HttpServletRequest httpRequest) throws BadRequestException {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseObject.builder()
-                        .data(orderService.createOrder(customerReq
-                                , payload.getOrderReq()))
+                        .data(orderService.createOrder(orderRequest
+                                , httpRequest))
                         .build()
                 );
     }

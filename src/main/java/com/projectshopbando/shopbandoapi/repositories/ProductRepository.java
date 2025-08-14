@@ -19,11 +19,18 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p WHERE " +
             "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +
+            "(:name IS NULL OR p.name LIKE %:name%) AND " +
+            "(:available IS NULL OR p.available = :available)"+
+            "ORDER BY p.createdAt DESC")
+    Page<Product> adminFindAll(String name, Long categoryId, Boolean available, Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE " +
+            "(:categoryId IS NULL OR p.category.id = :categoryId) AND" +
             "(:excludeId IS NULL OR p.id != :excludeId) AND" +
             "(:name IS NULL OR p.name LIKE %:name%) AND " +
             "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
             "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
-            "p.available = true")
+            "p.available = true ORDER BY p.createdAt DESC")
     Page<Product> searchWithConditions(Long categoryId, Long excludeId, String name
             , BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 }

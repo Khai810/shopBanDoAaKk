@@ -12,10 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateCustomerReq {
-    @NotBlank(message = "Customer first name must not be blank")
-    private String firstName;
     @NotBlank(message = "Customer last name must not be blank")
-    private String lastName;
+    private String fullName;
     @NotBlank(message = "Customer email must not be blank")
     private String email;
     @NotBlank(message = "Customer address must not be blank")
@@ -24,5 +22,4 @@ public class CreateCustomerReq {
     @Size(min = 10, message = "Phone number must be at least 10 digits")
     private String phone;
 
-    private String ipAddress;
 }

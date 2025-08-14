@@ -7,10 +7,11 @@ import com.projectshopbando.shopbandoapi.repositories.CustomerRepository;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,18 +20,13 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
 
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    public Page<Customer> getAllCustomers(int page, int size, String phone) {
+        Pageable pageable = PageRequest.of(page, size);
+        return customerRepository.findByPhoneContainingOrderByCreatedAtDesc(phone, pageable);
     }
     @Transactional
     public Customer createCustomer(@Valid CreateCustomerReq request) {
         Customer customer = customerMapper.toCustomer(request);
         return customerRepository.save(customer);
-    }
-
-    @Transactional
-    public Customer findOrCreateCustomerByPhone(@Valid CreateCustomerReq req) {
-        return customerRepository.findByPhone(req.getPhone())
-                .orElseGet(() -> createCustomer(req));
     }
 }

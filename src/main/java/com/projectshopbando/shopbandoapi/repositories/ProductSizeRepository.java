@@ -21,5 +21,4 @@ public interface ProductSizeRepository extends JpaRepository<ProductSize, Long> 
     @Query("SELECT ps FROM ProductSize ps WHERE ps.product.id = :productId AND ps.size = :size AND ps.product.available = true")
     Optional<ProductSize> findByProductIdAndSize(Long productId, String size);
 
-
 }

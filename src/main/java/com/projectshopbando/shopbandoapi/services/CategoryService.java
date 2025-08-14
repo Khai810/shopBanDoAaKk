@@ -7,6 +7,7 @@ import com.projectshopbando.shopbandoapi.mappers.CategoryMapper;
 import com.projectshopbando.shopbandoapi.repositories.CategoryRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -32,6 +33,7 @@ public class CategoryService {
                     .toList();
     }
 
+    @CacheEvict(value = "category:all", allEntries = true)
     public Category createCategory(@Valid CategoryCreateReq req){
         Category category = categoryMapper.toCategory(req);
         return categoryRepository.save(category);

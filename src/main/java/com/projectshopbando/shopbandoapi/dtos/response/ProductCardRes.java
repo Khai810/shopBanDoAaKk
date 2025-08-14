@@ -17,5 +17,6 @@ public class ProductCardRes implements Serializable {
     private String name;
     private BigDecimal price;
     private String thumbnail;
+    private Long categoryId;
 
 }
