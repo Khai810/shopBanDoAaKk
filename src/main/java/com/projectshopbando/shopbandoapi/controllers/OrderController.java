@@ -6,6 +6,7 @@ import com.projectshopbando.shopbandoapi.mappers.OrderMapper;
 import com.projectshopbando.shopbandoapi.services.OrderService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,15 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
                         .data(orderService.getAllOrder(page, size, search, status).map(orderMapper::toOrderDto))
+                        .build());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/stats")
+    public ResponseEntity<ResponseObject<?>> getOrderStats(@RequestParam int year, @RequestParam @Min(value = 0) int month) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(orderService.getOrderStats(year, month))
                         .build());
     }
 

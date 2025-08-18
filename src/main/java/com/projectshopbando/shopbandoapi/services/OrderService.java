@@ -6,6 +6,7 @@ import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreatePaymentUrlReq;
 import com.projectshopbando.shopbandoapi.dtos.request.OrderItemReq;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderResponse;
+import com.projectshopbando.shopbandoapi.dtos.response.OrderStatsDTO;
 import com.projectshopbando.shopbandoapi.entities.*;
 import com.projectshopbando.shopbandoapi.enums.OrderStatus;
 import com.projectshopbando.shopbandoapi.enums.PaymentMethod;
@@ -64,6 +65,25 @@ public class OrderService {
     public Order getOrderById(String id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Order not found with id: " + id));
+    }
+
+    public List<OrderStatsDTO> getOrderStats(int year, int month) {
+        if(month == 0 ) {
+            return orderRepository.getOrderYearStats(year).stream()
+                    .map(row -> new OrderStatsDTO(year + "-" + row[0].toString()
+                            , (Long) row[1], (BigDecimal) row[2]))
+                    .toList();
+        }else if(month >= 1 && month <= 12) {
+            return orderRepository.getOrderMonthStats(year, month).stream()
+                    .map(row -> new OrderStatsDTO(year + "-" + month + "-" + row[0].toString()
+                            , (Long) row[1], (BigDecimal) row[2]))
+                    .toList();
+        }
+        try {
+            throw new BadRequestException();
+        } catch (BadRequestException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<Order> getOrderByCustomerId(String customerId) {
@@ -150,7 +170,7 @@ public class OrderService {
             Long productId = orderProduct.getProduct().getId();
             productService.increaseProductSizeQuantity(productId, size, quantity);
         }
-        order.setStatus(OrderStatus.FAILED);
+        order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
     }
 

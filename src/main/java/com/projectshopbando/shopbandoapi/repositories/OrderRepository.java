@@ -20,4 +20,24 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     Page<Order> adminFindAll(String search, OrderStatus status, Pageable pageable);
 
     List<Order> findAllByCustomerIdOrderByOrderDateDesc(String customerId);
+
+    @Query(value = "SELECT MONTH(order_date) AS month,\n" +
+            "       COUNT(*) AS totalOrders,\n" +
+            "       SUM(total_amount) AS totalRevenue\n" +
+            "       FROM orders\n" +
+            "       WHERE YEAR(order_date) = :year " +
+            "       AND status IN ('PREPARING', 'SHIPPING', 'COMPLETED')\n" +
+            "       GROUP BY YEAR(order_date), MONTH(order_date)\n" +
+            "       ORDER BY MONTH(order_date) ASC;", nativeQuery = true)
+    List<Object[]> getOrderYearStats(int year);
+
+    @Query(value = "SELECT WEEK(order_date) AS Week,\n" +
+            "       COUNT(*) AS totalOrders,\n" +
+            "       SUM(total_amount) AS totalRevenue\n" +
+            "       FROM orders\n" +
+            "       WHERE YEAR(order_date) = :year AND MONTH(order_date) = :month \n" +
+            "       AND status IN ('PREPARING', 'SHIPPING', 'COMPLETED')\n" +
+            "       GROUP BY YEAR(order_date), MONTH(order_date), WEEK(order_date)\n" +
+            "       ORDER BY MONTH(order_date) ASC;", nativeQuery = true)
+    List<Object[]> getOrderMonthStats(int year, int month);
 }
