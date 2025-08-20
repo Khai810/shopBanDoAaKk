@@ -18,6 +18,8 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,10 +30,13 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Long.parseLong;
+
 @Service
 @RequiredArgsConstructor
 @Validated
 public class OrderService {
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private final OrderRepository orderRepository;
     private final CustomerService customerService;
     private final ProductService productService;
@@ -68,15 +73,16 @@ public class OrderService {
     }
 
     public List<OrderStatsDTO> getOrderStats(int year, int month) {
+        log.info("Get order stats for {}", year + "-" + month);
         if(month == 0 ) {
             return orderRepository.getOrderYearStats(year).stream()
                     .map(row -> new OrderStatsDTO(year + "-" + row[0].toString()
-                            , (Long) row[1], (BigDecimal) row[2]))
+                            , parseLong(row[1].toString()), new BigDecimal(row[2].toString())))
                     .toList();
         }else if(month >= 1 && month <= 12) {
             return orderRepository.getOrderMonthStats(year, month).stream()
-                    .map(row -> new OrderStatsDTO(year + "-" + month + "-" + row[0].toString()
-                            , (Long) row[1], (BigDecimal) row[2]))
+                    .map(row -> new OrderStatsDTO( year + "-" + month + "-" + row[0].toString()
+                            , parseLong(row[1].toString()), new BigDecimal(row[2].toString())))
                     .toList();
         }
         try {

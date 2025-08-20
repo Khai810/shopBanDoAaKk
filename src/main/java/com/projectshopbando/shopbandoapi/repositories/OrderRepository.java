@@ -31,7 +31,9 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "       ORDER BY MONTH(order_date) ASC;", nativeQuery = true)
     List<Object[]> getOrderYearStats(int year);
 
-    @Query(value = "SELECT WEEK(order_date) AS Week,\n" +
+    @Query(value = "SELECT YEAR(order_date) AS Year,\n" +
+            "       MONTH(order_date) AS Month,\n" +
+            "       WEEK(order_date) AS Week,\n" +
             "       COUNT(*) AS totalOrders,\n" +
             "       SUM(total_amount) AS totalRevenue\n" +
             "       FROM orders\n" +
