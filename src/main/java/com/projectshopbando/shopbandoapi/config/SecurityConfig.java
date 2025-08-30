@@ -16,9 +16,9 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.crypto.spec.SecretKeySpec;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -31,7 +31,7 @@ public class SecurityConfig {
     private String signerKey;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, RateLimiterFilter rateLimiterFilter) throws Exception {
         http.authorizeHttpRequests(request -> {
             request.requestMatchers(HttpMethod.GET, PUBLIC_URLS).permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
@@ -41,7 +41,7 @@ public class SecurityConfig {
         http.oauth2ResourceServer(oauth2 ->
                 oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder()).
                         jwtAuthenticationConverter(jwtAuthenticationConverter())));
-
+        http.addFilterBefore(rateLimiterFilter, UsernamePasswordAuthenticationFilter.class);
         http.csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
