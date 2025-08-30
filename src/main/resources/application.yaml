@@ -29,3 +29,8 @@ spring:
       path: /api
 jwt:
   signerKey: QSteYc1j62GRm00tZnCI3Xj/s3s28uVxr51yA3zl6Aa53UqaO9XeLS65XuKtAA2E
+
+cloudinary:
+  cloud_name: dktfi8vww
+  api_key: 362645982773694
+  secret_key: wT0F5v_ijVgS4vQAfI-iYLjvRzI
