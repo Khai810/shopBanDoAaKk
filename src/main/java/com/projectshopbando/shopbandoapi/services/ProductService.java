@@ -17,12 +17,10 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.util.List;
 
 @Validated
@@ -33,7 +31,6 @@ public class ProductService {
     private final ProductMapper productMapper;
     private final CategoryService categoryService;
     private final ProductSizeRepository productSizeRepository;
-    private final RedisTemplate<String, Integer> redisTemplate;
 
     public Product createProduct(@Valid ProductCreateRequest request) {
         Product product = productMapper.toProduct(request);
@@ -71,18 +68,9 @@ public class ProductService {
 
     @Transactional
     public void decreaseProductSizeQuantity(Long productId, String productSize, int quantity) throws BadRequestException {
-        String redisKey = String.format("product:%s:size:%s", productId, productSize);
-        Integer sizeQuantity = redisTemplate.opsForValue().get(redisKey);
-        if(sizeQuantity != null){
-            if(sizeQuantity < quantity){
-                throw new BadRequestException("Quantity exceeded");
-            }
-            redisTemplate.opsForValue().decrement(redisKey, quantity);
-        }
         ProductSize sizeEntity = productSizeRepository.findForUpdate(productId, productSize, quantity)
-                .orElseThrow(() -> new BadRequestException("Not enough stock for size" + productSize));
+                .orElseThrow(() -> new BadRequestException("Not enough stock for size " + productSize));
         sizeEntity.setQuantity(sizeEntity.getQuantity() - quantity);
-        redisTemplate.opsForValue().set(redisKey, sizeEntity.getQuantity(), Duration.ofMinutes(2));
     }
 
     @Transactional

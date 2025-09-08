@@ -3,6 +3,7 @@ package com.projectshopbando.shopbandoapi.exception;
 import com.projectshopbando.shopbandoapi.dtos.response.ResponseObject;
 import org.apache.coyote.BadRequestException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -44,7 +45,15 @@ public class GlobalExceptionHandler {
                 .body(res);
     }
 
-//    @ExceptionHandler(G)
+//    @ExceptionHandler(OptimisticLockingFailureException.class)
+//    public ResponseEntity<ResponseObject<?>> handleOptimisticLockingFailure(OptimisticLockingFailureException e) {
+//        ResponseObject<?> error = ResponseObject.builder()
+//                .status("error")
+//                .message("Unable to complete order due to high demand. Please try again.")
+//                .build();
+//
+//        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+//    }
 
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

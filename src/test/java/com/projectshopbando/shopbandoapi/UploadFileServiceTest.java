@@ -64,10 +64,4 @@ public class UploadFileServiceTest {
 
         verify(uploader).destroy(eq("products/badImage"), anyMap());
     }
-
-//    @Test
-//    public void deleteFileFromCloudinaryTest(){
-//        boolean res = uploadFileService.deleteFile(publicId);
-//        System.out.println(res);
-//    }
 }

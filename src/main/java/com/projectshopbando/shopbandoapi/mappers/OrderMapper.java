@@ -17,6 +17,7 @@ public interface OrderMapper {
     OrderDto toOrderDto(Order order);
 
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "paymentMethod", ignore = true)
     Order toOrder(CreateOrderReq request);
 
     @Mapping(target = "productId", source = "product.id")

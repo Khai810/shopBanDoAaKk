@@ -5,9 +5,13 @@ import com.projectshopbando.shopbandoapi.dtos.request.CreateCustomerReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreatePaymentUrlReq;
 import com.projectshopbando.shopbandoapi.dtos.request.OrderItemReq;
+import com.projectshopbando.shopbandoapi.dtos.response.OrderItemsRes;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderResponse;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderStatsDTO;
-import com.projectshopbando.shopbandoapi.entities.*;
+import com.projectshopbando.shopbandoapi.entities.Customer;
+import com.projectshopbando.shopbandoapi.entities.Order;
+import com.projectshopbando.shopbandoapi.entities.OrderProduct;
+import com.projectshopbando.shopbandoapi.entities.Product;
 import com.projectshopbando.shopbandoapi.enums.OrderStatus;
 import com.projectshopbando.shopbandoapi.enums.PaymentMethod;
 import com.projectshopbando.shopbandoapi.exception.NotFoundException;
@@ -18,8 +22,6 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,7 +38,6 @@ import static java.lang.Long.parseLong;
 @RequiredArgsConstructor
 @Validated
 public class OrderService {
-    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private final OrderRepository orderRepository;
     private final CustomerService customerService;
     private final ProductService productService;
@@ -73,7 +74,6 @@ public class OrderService {
     }
 
     public List<OrderStatsDTO> getOrderStats(int year, int month) {
-        log.info("Get order stats for {}", year + "-" + month);
         if(month == 0 ) {
             return orderRepository.getOrderYearStats(year).stream()
                     .map(row -> new OrderStatsDTO(year + "-" + row[0].toString()
@@ -96,74 +96,23 @@ public class OrderService {
         return orderRepository.findAllByCustomerIdOrderByOrderDateDesc(customerId);
     }
 
-    @Transactional
-    public OrderResponse createOrder(@Valid CreateOrderReq orderReq, HttpServletRequest httpRequest) throws BadRequestException {
+        @Transactional
+        public OrderResponse createOrder(@Valid CreateOrderReq orderReq, HttpServletRequest httpRequest) throws BadRequestException {
+            validateOrderItems(orderReq.getItems()); // validate order items
 
-        Order order = orderMapper.toOrder(orderReq);
+            Customer customer = resolveCustomer(orderReq); // resolve customer
 
-        if(orderReq.getUserId() != null){
-            User customer = userService.getUserById(orderReq.getUserId());
+            Order order = orderMapper.toOrder(orderReq); // create order entity
             order.setCustomer(customer);
+
+            // Process order items and calc total amount
+            OrderItemsRes orderItems = processOrderItems(orderReq.getItems(), order);
+            order.setTotalAmount(orderItems.getTotalAmount());
+            order.setOrderedProduct(orderItems.getOrderProducts());
+            order.setStatus(OrderStatus.UNPAID);
+            // Handle paymentMethod
+            return processPayment(order, orderReq.getPaymentMethod(), httpRequest);
         }
-        else {
-            CreateCustomerReq customerReq = CreateCustomerReq.builder()
-                    .fullName(orderReq.getRecipientName())
-                    .email(orderReq.getRecipientEmail())
-                    .phone(orderReq.getRecipientPhone())
-                    .address(orderReq.getRecipientAddress())
-                    .build();
-            Customer customer = customerService.createCustomer(customerReq);
-            order.setCustomer(customer);
-        }
-
-        order.setStatus(OrderStatus.UNPAID);
-        BigDecimal totalAmount = BigDecimal.ZERO;
-
-        List<OrderProduct> orderProducts = new ArrayList<>();
-        List<OrderItemReq> items = orderReq.getItems();
-        // Set OrderProduct
-        for (OrderItemReq item : items) {
-            Product product = productService.getProductByIdAndAvailableTrue(item.getProductId());
-            productService.decreaseProductSizeQuantity(product.getId(), item.getSize(), item.getQuantity());
-            OrderProduct orderProduct = OrderProduct.builder()
-                    .size(item.getSize())
-                    .product(product)
-                    .order(order)
-                    .quantity(item.getQuantity())
-                    .unitPrice(product.getPrice())
-                    .totalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                    .build();
-            orderProducts.add(orderProduct);
-            totalAmount = totalAmount.add(orderProduct.getTotalPrice());
-        }
-
-        order.setTotalAmount(totalAmount);
-        order.setOrderedProduct(orderProducts);
-        order = orderRepository.save(order);
-
-        if(orderReq.getPaymentMethod().equals(String.valueOf(PaymentMethod.COD))){
-            order.setPaymentMethod(PaymentMethod.COD);
-            order.setStatus(OrderStatus.PREPARING);
-            order = orderRepository.save(order);
-            return OrderResponse.builder()
-                    .order(orderMapper.toOrderDto(order))
-                    .payment(null)
-                    .build();
-        }
-
-         var customerIpAddress = VnPayConfig.getIpAddress(httpRequest);
-
-        CreatePaymentUrlReq paymentRequest = CreatePaymentUrlReq.builder()
-                .amount(order.getTotalAmount())
-                .ipAddress(customerIpAddress)
-                .txnRef(order.getId())
-                .build();
-
-        return OrderResponse.builder()
-                .order(orderMapper.toOrderDto(order))
-                .payment(paymentService.initPaymentUrl(paymentRequest))
-                .build();
-    }
 
     @Transactional
     public void cancelOrder(String orderId) {
@@ -185,5 +134,88 @@ public class OrderService {
                 .orElseThrow(() -> new NotFoundException("Order not found"));
         orderRepository.delete(order);
         return "Order deleted";
+    }
+
+    private Customer resolveCustomer(CreateOrderReq orderReq) {
+        if(orderReq.getUserId() != null){
+            return userService.getUserById(orderReq.getUserId());
+        }
+        else {
+            CreateCustomerReq customerReq = CreateCustomerReq.builder()
+                    .fullName(orderReq.getRecipientName())
+                    .email(orderReq.getRecipientEmail())
+                    .phone(orderReq.getRecipientPhone())
+                    .address(orderReq.getRecipientAddress())
+                    .build();
+            return customerService.createCustomer(customerReq);
+        }
+    }
+
+    private OrderItemsRes processOrderItems(List<OrderItemReq> items, Order order) throws BadRequestException {
+        List<OrderProduct> orderProducts = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        for (OrderItemReq item : items) {
+            Product product = productService.getProductByIdAndAvailableTrue(item.getProductId());
+
+            productService.decreaseProductSizeQuantity(product.getId(), item.getSize(), item.getQuantity());
+            OrderProduct orderProduct = OrderProduct.builder()
+                    .product(product)
+                    .order(order)
+                    .quantity(item.getQuantity())
+                    .size(item.getSize())
+                    .unitPrice(product.getPrice())
+                    .totalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .build();
+
+            orderProducts.add(orderProduct);
+            totalAmount = totalAmount.add(orderProduct.getTotalPrice());
+        }
+        return new OrderItemsRes(orderProducts, totalAmount);
+    }
+
+    private void validateOrderItems(List<OrderItemReq> items) throws BadRequestException {
+        if(items == null || items.isEmpty()) {
+            throw new BadRequestException("Order Items cannot be empty");
+        }
+        for (OrderItemReq item : items) {
+            if (item.getQuantity() <= 0) {
+                throw new BadRequestException("Quantity must be greater than 0");
+            }
+            if (item.getSize() == null || item.getSize().isEmpty()) {
+                throw new BadRequestException("Size must be specified for product ID: " + item.getProductId());
+            }
+        }
+    }
+
+    private OrderResponse processPayment(Order order, String paymentMethod, HttpServletRequest httpRequest) throws BadRequestException {
+        // Handle COD paymentMethod
+        if(PaymentMethod.COD.name().equals(paymentMethod)){
+            order.setStatus(OrderStatus.PREPARING);
+            order.setPaymentMethod(PaymentMethod.COD);
+            order = orderRepository.save(order);
+
+            return OrderResponse.builder()
+                    .order(orderMapper.toOrderDto(order))
+                    .payment(null)
+                    .build();
+        }else if(PaymentMethod.VNPAY.name().equals(paymentMethod)) {
+            // Handle VNPAY paymentMethod
+            order.setPaymentMethod(PaymentMethod.VNPAY);
+            order = orderRepository.save(order);
+
+            var customerIpAddress = VnPayConfig.getIpAddress(httpRequest);
+            CreatePaymentUrlReq paymentRequest = CreatePaymentUrlReq.builder()
+                    .amount(order.getTotalAmount())
+                    .ipAddress(customerIpAddress)
+                    .txnRef(order.getId())
+                    .build();
+
+            return OrderResponse.builder()
+                    .order(orderMapper.toOrderDto(order))
+                    .payment(paymentService.initPaymentUrl(paymentRequest))
+                    .build();
+        }
+        else throw new BadRequestException("Invalid payment method");
     }
 }

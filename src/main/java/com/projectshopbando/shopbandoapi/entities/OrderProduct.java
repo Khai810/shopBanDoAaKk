@@ -29,13 +29,4 @@ public class OrderProduct {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
-
-    @PrePersist
-    protected void calcTotalPrice() {
-        if(unitPrice != null && quantity != null) {
-            this.totalPrice = unitPrice.multiply(BigDecimal.valueOf(quantity));
-        } else {
-            this.totalPrice = BigDecimal.ZERO;
-        }
-    }
 }
