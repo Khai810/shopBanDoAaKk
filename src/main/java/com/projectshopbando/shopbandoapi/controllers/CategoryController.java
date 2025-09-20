@@ -7,6 +7,7 @@ import com.projectshopbando.shopbandoapi.services.CategoryService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 public class CategoryController {
     private final CategoryMapper categoryMapper;
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
 
     @GetMapping()
     public ResponseEntity<ResponseObject<?>> getAllCategory() {
@@ -34,6 +35,7 @@ public class CategoryController {
                         .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
     public ResponseEntity<ResponseObject<?>> createCategory(@RequestBody CategoryCreateReq req) {
         return ResponseEntity.status(HttpStatus.OK)

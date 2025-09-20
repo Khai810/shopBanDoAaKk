@@ -83,6 +83,7 @@ public class ProductController {
                         .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
     public ResponseEntity<ResponseObject<ProductResponse>> createProduct(@RequestBody ProductCreateRequest request){
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -92,6 +93,7 @@ public class ProductController {
                         .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/disable")
     public ResponseEntity<ResponseObject<?>> disableProduct(@PathVariable Long id){
         productService.disableProduct(id);
