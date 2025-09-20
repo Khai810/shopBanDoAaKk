@@ -1,35 +1,41 @@
 package com.projectshopbando.shopbandoapi.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "customers")
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "customer_type")
 @AllArgsConstructor
 @NoArgsConstructor
-@SuperBuilder
+@Builder
 @Data
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @NotNull
     private String fullName;
-    private String email;
+    @NotNull
+    @Column(name = "phone", unique=true)
     private String phone;
-    private String address;
+
+    private BigDecimal points;
 
     @OneToMany(mappedBy = "customer")
     private List<Order> orders = new ArrayList<>();
+
+    @OneToOne(mappedBy = "customer", cascade =  CascadeType.ALL)
+    private Account account;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

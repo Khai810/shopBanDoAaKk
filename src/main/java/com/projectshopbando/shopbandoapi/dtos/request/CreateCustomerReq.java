@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -14,12 +16,11 @@ import lombok.NoArgsConstructor;
 public class CreateCustomerReq {
     @NotBlank(message = "Customer last name must not be blank")
     private String fullName;
-    @NotBlank(message = "Customer email must not be blank")
-    private String email;
-    @NotBlank(message = "Customer address must not be blank")
-    private String address;
     @NotBlank(message = "Customer phone number must not be blank")
     @Size(min = 10, message = "Phone number must be at least 10 digits")
     private String phone;
 
+    private String email;
+    private String password;
+    private LocalDate dob;
 }

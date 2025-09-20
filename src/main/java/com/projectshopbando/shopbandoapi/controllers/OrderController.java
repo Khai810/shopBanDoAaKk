@@ -37,7 +37,7 @@ public class OrderController {
             @RequestParam int page
             , @RequestParam int size
             , @RequestParam(required = false) String search
-            , @RequestParam(required = false) String status) {
+            , @RequestParam(required = false) String status) throws BadRequestException {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
                         .data(orderService.getAllOrder(page, size, search, status).map(orderMapper::toOrderDto))

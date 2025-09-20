@@ -1,8 +1,10 @@
 package com.projectshopbando.shopbandoapi.config;
 
-import com.projectshopbando.shopbandoapi.entities.User;
+import com.projectshopbando.shopbandoapi.entities.Account;
+import com.projectshopbando.shopbandoapi.entities.Customer;
 import com.projectshopbando.shopbandoapi.enums.Roles;
-import com.projectshopbando.shopbandoapi.repositories.UserRepository;
+import com.projectshopbando.shopbandoapi.repositories.AccountRepository;
+import com.projectshopbando.shopbandoapi.repositories.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
@@ -17,23 +19,26 @@ import java.util.HashSet;
 @RequiredArgsConstructor
 public class ApplicationInitConfig {
     private final PasswordEncoder passwordEncoder;
-
+    private final CustomerRepository customerRepository;
     @Bean
-    public ApplicationRunner applicationRunner(UserRepository userRepository) {
+    public ApplicationRunner applicationRunner(AccountRepository accountRepository) {
         return args -> {
-            if (userRepository.findByUsername("admin").isEmpty()) {
+            if (accountRepository.findByCustomer_Phone("0999999999").isEmpty()) {
                 var roles = new HashSet<Roles>();
                 roles.add(Roles.ADMIN);
                 roles.add(Roles.USER);
 
-                User user = User.builder()
-                        .username("admin")
+                Customer customer = Customer.builder()
+                        .fullName("KhaiPham ADMIN")
+                        .phone("0999999999")
+                        .build();
+                customer = customerRepository.save(customer);
+                Account account = Account.builder()
                         .password(passwordEncoder.encode("admin"))
                         .role(roles)
-                        .fullName("Khai Pham")
-                        .phone("0123123123")
+                        .customer(customer)
                         .build();
-                userRepository.save(user);
+                accountRepository.save(account);
                 log.warn("default admin user has been created with default password admin");
             }
         };

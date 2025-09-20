@@ -1,9 +1,12 @@
 package com.projectshopbando.shopbandoapi.dtos.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class AuthenticateReq {
-    private String username;
+    @NotBlank
+    private String phone;
+    @NotBlank
     private String password;
 }

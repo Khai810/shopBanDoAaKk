@@ -5,8 +5,9 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.projectshopbando.shopbandoapi.dtos.request.AuthenticateReq;
 import com.projectshopbando.shopbandoapi.dtos.response.AuthenticateRes;
-import com.projectshopbando.shopbandoapi.entities.User;
+import com.projectshopbando.shopbandoapi.entities.Customer;
 import com.projectshopbando.shopbandoapi.enums.Roles;
+import com.projectshopbando.shopbandoapi.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,14 +21,17 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
-    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final CustomerService customerService;
     @Value("${jwt.signerKey}")
     private String SignerKey;
 
     public AuthenticateRes authenticate(AuthenticateReq request){
-        User user = userService.getUserByUsername(request.getUsername());
-        boolean result = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        Customer customer = customerService.getCustomerByPhone(request.getPhone());
+        if(customer.getAccount().getPassword() == null){
+            throw new NotFoundException("Account not found");
+        }
+        boolean result = passwordEncoder.matches(request.getPassword(), customer.getAccount().getPassword());
         if(!result){
             return AuthenticateRes.builder()
                     .isAuthenticated(false)
@@ -35,20 +39,20 @@ public class AuthenticationService {
         }
         return AuthenticateRes.builder()
                 .isAuthenticated(true)
-                .token(generateToken(user))
+                .token(generateToken(customer))
                 .build();
 
     }
 
-    private String generateToken(User user) {
+    private String generateToken(Customer customer) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(user.getId())
+                .subject(customer.getId())
                 .issuer("ShopBanDo.com")
                 .issueTime(new Date())
                 .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-                .claim("scope", buildScope(user.getRole()))
+                .claim("scope", buildScope(customer.getAccount().getRole()))
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(header, payload);

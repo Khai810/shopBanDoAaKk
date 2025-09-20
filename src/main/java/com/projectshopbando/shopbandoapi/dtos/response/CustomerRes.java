@@ -5,6 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Set;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -14,5 +18,7 @@ public class CustomerRes {
     private String fullName;
     private String email;
     private String phone;
-    private String address;
+    private LocalDate dob;
+    private Set<String> role;
+    private BigDecimal points;
 }

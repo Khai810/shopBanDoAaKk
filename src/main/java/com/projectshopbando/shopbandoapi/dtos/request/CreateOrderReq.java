@@ -16,7 +16,7 @@ import java.util.List;
 @Builder
 public class CreateOrderReq {
 
-    private String userId;
+    private String customerId;
 
     @NotBlank(message = "recipient name must not be blank")
     private String recipientName;

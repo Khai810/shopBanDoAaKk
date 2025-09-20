@@ -43,7 +43,7 @@ public class OrderService {
     private final ProductService productService;
     private final PaymentService paymentService;
     private final OrderMapper orderMapper;
-    private final UserService userService;
+    private final AccountService accountService;
 
     public boolean checkIfOrderExists(String orderId) {
         return orderRepository.existsById(orderId);
@@ -59,11 +59,15 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public Page<Order> getAllOrder(int page, int size, String search, String status) {
+    public Page<Order> getAllOrder(int page, int size, String search, String status) throws BadRequestException {
         Pageable pageable = PageRequest.of(page, size);
         OrderStatus orderStatus = null;
         if(status != null && !status.isEmpty()) {
-            orderStatus = OrderStatus.valueOf(status);
+            try {
+                orderStatus = OrderStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Invalid order status: " + status);
+            }
         }
         return orderRepository.adminFindAll(search, orderStatus , pageable);
     }
@@ -96,8 +100,8 @@ public class OrderService {
         return orderRepository.findAllByCustomerIdOrderByOrderDateDesc(customerId);
     }
 
-        @Transactional
-        public OrderResponse createOrder(@Valid CreateOrderReq orderReq, HttpServletRequest httpRequest) throws BadRequestException {
+    @Transactional
+    public OrderResponse createOrder(@Valid CreateOrderReq orderReq, HttpServletRequest httpRequest) throws BadRequestException {
             validateOrderItems(orderReq.getItems()); // validate order items
 
             Customer customer = resolveCustomer(orderReq); // resolve customer
@@ -107,7 +111,7 @@ public class OrderService {
 
             // Process order items and calc total amount
             OrderItemsRes orderItems = processOrderItems(orderReq.getItems(), order);
-            order.setTotalAmount(orderItems.getTotalAmount());
+            order.setTotalAmount(orderItems.getTotalAmount()); // Total Amount of Order
             order.setOrderedProduct(orderItems.getOrderProducts());
             order.setStatus(OrderStatus.UNPAID);
             // Handle paymentMethod
@@ -136,21 +140,28 @@ public class OrderService {
         return "Order deleted";
     }
 
-    private Customer resolveCustomer(CreateOrderReq orderReq) {
-        if(orderReq.getUserId() != null){
-            return userService.getUserById(orderReq.getUserId());
+    // Helper methods check Customer
+    // If CustomerId is provided, get Customer by Id (Priority to the main account)
+    // If CustomerId is not provided, get Customer by Phone (For Guest account who have ordered before)
+    // If Customer not found by Phone, create new Customer (New Guest account)
+    private Customer resolveCustomer(CreateOrderReq orderReq) throws BadRequestException {
+        if(orderReq.getCustomerId() != null){
+            return customerService.getCustomerById(orderReq.getCustomerId()); // Customer have account
+        }
+        Customer customer = customerService.getCustomerByPhone(orderReq.getRecipientPhone()); // Customer have no account
+        if(customer != null){
+            return customer;
         }
         else {
             CreateCustomerReq customerReq = CreateCustomerReq.builder()
                     .fullName(orderReq.getRecipientName())
-                    .email(orderReq.getRecipientEmail())
                     .phone(orderReq.getRecipientPhone())
-                    .address(orderReq.getRecipientAddress())
                     .build();
-            return customerService.createCustomer(customerReq);
+            return customerService.createCustomer(customerReq); // Create new Customer
         }
     }
 
+    //Helper methods process Order Items
     private OrderItemsRes processOrderItems(List<OrderItemReq> items, Order order) throws BadRequestException {
         List<OrderProduct> orderProducts = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -174,6 +185,7 @@ public class OrderService {
         return new OrderItemsRes(orderProducts, totalAmount);
     }
 
+    // Helper methods validate Order Items
     private void validateOrderItems(List<OrderItemReq> items) throws BadRequestException {
         if(items == null || items.isEmpty()) {
             throw new BadRequestException("Order Items cannot be empty");
@@ -188,6 +200,7 @@ public class OrderService {
         }
     }
 
+    // Helper methods process Payment
     private OrderResponse processPayment(Order order, String paymentMethod, HttpServletRequest httpRequest) throws BadRequestException {
         // Handle COD paymentMethod
         if(PaymentMethod.COD.name().equals(paymentMethod)){
