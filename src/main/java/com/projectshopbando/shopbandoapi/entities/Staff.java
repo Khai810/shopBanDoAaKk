@@ -1,44 +1,49 @@
 package com.projectshopbando.shopbandoapi.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "customers")
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
+@Table(name = "staffs")
 @Data
-public class Customer {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Staff {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @NotNull
+    @NotBlank
     private String fullName;
-    @NotNull
-    @Column(name = "phone", unique=true)
+
+    @NotBlank
     private String phone;
 
-    private BigDecimal points;
+    @NotNull
+    private String position;
 
-    @OneToMany(mappedBy = "customer")
-    private List<Order> orders = new ArrayList<>();
+    @NotBlank
+    private String store;
 
-    @OneToOne(cascade =  CascadeType.ALL, mappedBy = "customer")
-    private Account account;
+    @NotNull
+    private LocalDate joinDate;
+
 
     private LocalDateTime createdAt;
+
     private LocalDateTime updatedAt;
+
+    @OneToOne(cascade =  CascadeType.ALL, mappedBy = "staff")
+    private Account account;
 
     @PrePersist
     protected void onCreate() {

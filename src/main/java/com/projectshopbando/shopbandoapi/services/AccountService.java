@@ -4,6 +4,7 @@ import com.projectshopbando.shopbandoapi.dtos.request.ChangePasswordReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreateAccountReq;
 import com.projectshopbando.shopbandoapi.entities.Account;
 import com.projectshopbando.shopbandoapi.entities.Customer;
+import com.projectshopbando.shopbandoapi.entities.Staff;
 import com.projectshopbando.shopbandoapi.enums.Roles;
 import com.projectshopbando.shopbandoapi.exception.NotFoundException;
 import com.projectshopbando.shopbandoapi.mappers.AccountMapper;
@@ -23,25 +24,30 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AccountService {
     private final AccountRepository accountRepository;
-    private final CustomerRepository customerRepository;
     private final AccountMapper accountMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public Account getAccountByPhone(String phone) {
-        return accountRepository.findByCustomer_Phone(phone)
+    public Account getAccountByEmail(String email) {
+        return accountRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Account not found"));
     }
 
-    // Create account when create customer
-    // Default role is USER
-    // Account is not saved to database, it will be saved when customer is saved
-    public Account createAccount (CreateAccountReq request, Customer customer) {
+    // Create account when create customer / staff
+    // Default role is CUSTOMER for customer, STAFF for staff
+    // Account is not saved to database, it will be saved when customer / staff is saved
+    public Account createAccount (CreateAccountReq request, Customer customer, Staff staff) {
             Account account = accountMapper.toAccount(request);
             account.setPassword(passwordEncoder.encode(request.getPassword()));
             Set<Roles> roles = new HashSet<>();
-            roles.add(Roles.USER);
-            account.setRole(roles);
+            if(staff != null) {
+                account.setStaff(staff);
+                roles.add(Roles.STAFF);
+                roles.add(Roles.ADMIN);
+                return account;
+            }
             account.setCustomer(customer);
+            roles.add(Roles.CUSTOMER);
+            account.setRole(roles);
             return account;
     }
 

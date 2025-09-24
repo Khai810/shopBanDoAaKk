@@ -5,7 +5,7 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.projectshopbando.shopbandoapi.dtos.request.AuthenticateReq;
 import com.projectshopbando.shopbandoapi.dtos.response.AuthenticateRes;
-import com.projectshopbando.shopbandoapi.entities.Customer;
+import com.projectshopbando.shopbandoapi.entities.Account;
 import com.projectshopbando.shopbandoapi.enums.Roles;
 import com.projectshopbando.shopbandoapi.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -22,16 +22,16 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
-    private final CustomerService customerService;
+    private final AccountService accountService;
     @Value("${jwt.signerKey}")
     private String SignerKey;
 
     public AuthenticateRes authenticate(AuthenticateReq request){
-        Customer customer = customerService.getCustomerByPhone(request.getPhone());
-        if(customer.getAccount().getPassword() == null){
-            throw new NotFoundException("Account not found");
+        Account account = accountService.getAccountByEmail(request.getEmail());
+        if(account == null){
+            throw  new NotFoundException("User not found");
         }
-        boolean result = passwordEncoder.matches(request.getPassword(), customer.getAccount().getPassword());
+        boolean result = passwordEncoder.matches(request.getPassword(), account.getPassword());
         if(!result){
             return AuthenticateRes.builder()
                     .isAuthenticated(false)
@@ -39,20 +39,32 @@ public class AuthenticationService {
         }
         return AuthenticateRes.builder()
                 .isAuthenticated(true)
-                .token(generateToken(customer))
+                .token(generateToken(account))
                 .build();
 
     }
 
-    private String generateToken(Customer customer) {
+    // Helper method for generating JWT token
+    private String generateToken(Account account) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
+        //Check if account is customer or staff
+        String subjectId;
+        if (account.getCustomer() != null) {
+            subjectId = account.getCustomer().getId();
+        } else if (account.getStaff() != null) {
+            subjectId = account.getStaff().getId();
+        } else {
+            throw new RuntimeException("Account must belong to either Customer or Staff");
+        }
+
+        // Build JWT Claims Set
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(customer.getId())
-                .issuer("ShopBanDo.com")
+                .subject(subjectId)
+                .issuer("ShopBanDoAaKk.com")
                 .issueTime(new Date())
                 .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-                .claim("scope", buildScope(customer.getAccount().getRole()))
+                .claim("scope", buildScope(account.getRole()))
                 .build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(header, payload);
@@ -64,6 +76,7 @@ public class AuthenticationService {
         }
     }
 
+    // Helper method to build scope string from roles
     private String buildScope(Set<Roles> roles) {
         StringBuilder sb = new StringBuilder();
         for(Roles role : roles) {

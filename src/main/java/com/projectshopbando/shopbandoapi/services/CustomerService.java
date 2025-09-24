@@ -38,7 +38,6 @@ public class CustomerService {
             throw new BadRequestException("Customer already exists");
         }
 
-
         if(customer != null) {                                // If customer exists but doesn't have an account, update the customer
             customer.setFullName(request.getFullName());
             if (request.getEmail() != null && request.getPassword() != null) {
@@ -75,6 +74,6 @@ public class CustomerService {
                 .email(request.getEmail())
                 .password(request.getPassword())
                 .build();
-        return accountService.createAccount(createAccountReq, customer);
+        return accountService.createAccount(createAccountReq, customer, null);
     }
 }

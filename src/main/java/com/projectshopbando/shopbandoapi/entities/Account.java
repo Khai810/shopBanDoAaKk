@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -31,7 +30,11 @@ public class Account{
     @Enumerated(EnumType.STRING)
     private Set<Roles> role;
 
-    @OneToOne()
-    @JoinColumn(name = "customer_id", unique = true, nullable = false)
+    @OneToOne
+    @JoinColumn(name = "customer_id", nullable = true)
     private Customer customer;
+
+    @OneToOne
+    @JoinColumn(name = "staff_id", nullable = true)
+    private Staff staff;
 }

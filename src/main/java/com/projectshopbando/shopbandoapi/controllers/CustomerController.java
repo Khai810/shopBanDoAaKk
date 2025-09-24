@@ -48,7 +48,7 @@ public class CustomerController {
                         .build());
     }
 
-    @PostMapping("")
+    @PostMapping()
     public ResponseEntity<ResponseObject<?>> createCustomer(@RequestBody CreateCustomerReq req) throws BadRequestException {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()

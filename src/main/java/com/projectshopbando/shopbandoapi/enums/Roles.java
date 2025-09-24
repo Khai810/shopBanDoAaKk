@@ -1,6 +1,7 @@
 package com.projectshopbando.shopbandoapi.enums;
 
 public enum Roles {
-    USER,
+    CUSTOMER,
+    STAFF,
     ADMIN
 }
