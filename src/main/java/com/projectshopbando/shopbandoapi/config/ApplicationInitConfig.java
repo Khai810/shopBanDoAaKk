@@ -23,11 +23,10 @@ public class ApplicationInitConfig {
     @Bean
     public ApplicationRunner applicationRunner(AccountRepository accountRepository, StaffRepository staffRepository) {
         return args -> {
-            if (accountRepository.findByEmail("admin").isEmpty()) {
+            if (accountRepository.findByEmail("admin@gmail.com").isEmpty()) {
                 var roles = new HashSet<Roles>();
                 roles.add(Roles.ADMIN);
                 roles.add(Roles.STAFF);
-                roles.add(Roles.CUSTOMER);
 
                 Staff staff = Staff.builder()
                         .fullName("KhaiPham ADMIN")
@@ -38,9 +37,11 @@ public class ApplicationInitConfig {
                         .build();
 
                 Account account = Account.builder()
+                        .email("admin@gmail.com")
                         .password(passwordEncoder.encode("admin"))
                         .role(roles)
                         .staff(staff)
+                        .dob(LocalDate.of(999, 11, 11))
                         .build();
 
                 staff.setAccount(account);

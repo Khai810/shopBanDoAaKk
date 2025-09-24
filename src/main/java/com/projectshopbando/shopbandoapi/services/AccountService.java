@@ -42,6 +42,7 @@ public class AccountService {
             if(staff != null) {
                 account.setStaff(staff);
                 roles.add(Roles.STAFF);
+                roles.add(Roles.ADMIN);
                 return account;
             }
             account.setCustomer(customer);
