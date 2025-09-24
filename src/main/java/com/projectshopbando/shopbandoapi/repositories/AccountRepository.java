@@ -17,4 +17,6 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     Optional<Account> findByCustomer_Phone(String phone);
 
     Page<Account> findByCustomer_FullNameContainingOrCustomer_PhoneContainingOrderByCustomer_CreatedAtDesc(String fullName, String phone, Pageable pageable);
+
+    Optional<Account> findByEmail(String email);
 }
