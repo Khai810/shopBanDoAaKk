@@ -30,9 +30,11 @@ public class Account{
     @Enumerated(EnumType.STRING)
     private Set<Roles> role;
 
-    @OneToOne(mappedBy = "account")
+    @OneToOne
+    @JoinColumn(name = "customer_id", nullable = true)
     private Customer customer;
 
-    @OneToOne(mappedBy = "account")
+    @OneToOne
+    @JoinColumn(name = "staff_id", nullable = true)
     private Staff staff;
 }

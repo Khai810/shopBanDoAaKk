@@ -42,8 +42,7 @@ public class Staff {
 
     private LocalDateTime updatedAt;
 
-    @OneToOne(cascade =  CascadeType.ALL)
-    @JoinColumn(name = "account_id")
+    @OneToOne(cascade =  CascadeType.ALL, mappedBy = "staff")
     private Account account;
 
     @PrePersist

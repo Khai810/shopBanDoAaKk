@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 
 @Slf4j
@@ -31,16 +32,19 @@ public class ApplicationInitConfig {
                 Staff staff = Staff.builder()
                         .fullName("KhaiPham ADMIN")
                         .phone("0999999999")
+                        .store("AaKk")
+                        .joinDate(LocalDate.now())
+                        .position("cashier")
                         .build();
-                staff = staffRepository.save(staff);
 
                 Account account = Account.builder()
                         .password(passwordEncoder.encode("admin"))
                         .role(roles)
-                        .customer(null)
                         .staff(staff)
                         .build();
-                accountRepository.save(account);
+
+                staff.setAccount(account);
+                staffRepository.save(staff);
                 log.warn("default admin user has been created with default password admin");
             }
         };

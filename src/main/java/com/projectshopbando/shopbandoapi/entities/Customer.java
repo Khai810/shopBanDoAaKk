@@ -34,8 +34,7 @@ public class Customer {
     @OneToMany(mappedBy = "customer")
     private List<Order> orders = new ArrayList<>();
 
-    @OneToOne(cascade =  CascadeType.ALL)
-    @JoinColumn(name = "account_id")
+    @OneToOne(cascade =  CascadeType.ALL, mappedBy = "customer")
     private Account account;
 
     private LocalDateTime createdAt;
