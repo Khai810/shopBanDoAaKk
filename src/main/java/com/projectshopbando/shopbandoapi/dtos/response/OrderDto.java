@@ -1,9 +1,7 @@
 package com.projectshopbando.shopbandoapi.dtos.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,17 +11,28 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Setter
+@Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class OrderDto {
     private String id;
-    private String recipientName;
-    private String recipientPhone;
-    private String recipientEmail;
-    private String recipientAddress;
+    private String name;
+    private String phone;
     private LocalDateTime orderDate;
     private BigDecimal totalAmount;
+    private int totalQuantity;
+    private BigDecimal tax;
+    private BigDecimal discount;
     private String paymentMethod;
     private String status;
     private String note;
-    private List<OrderProductRes> orderedProduct;
+    //Online Order
+    private String email;
+    private String address;
+    private BigDecimal shippingFee;
+    //Offline Order
+    private String store;
+    private String staffName;
+    private List<OrderProductRes> orderedProducts;
 
 }

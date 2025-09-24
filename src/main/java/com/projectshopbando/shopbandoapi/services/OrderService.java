@@ -8,10 +8,7 @@ import com.projectshopbando.shopbandoapi.dtos.request.OrderItemReq;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderItemsRes;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderResponse;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderStatsDTO;
-import com.projectshopbando.shopbandoapi.entities.Customer;
-import com.projectshopbando.shopbandoapi.entities.Order;
-import com.projectshopbando.shopbandoapi.entities.OrderProduct;
-import com.projectshopbando.shopbandoapi.entities.Product;
+import com.projectshopbando.shopbandoapi.entities.*;
 import com.projectshopbando.shopbandoapi.enums.OrderStatus;
 import com.projectshopbando.shopbandoapi.enums.PaymentMethod;
 import com.projectshopbando.shopbandoapi.exception.NotFoundException;
@@ -43,7 +40,7 @@ public class OrderService {
     private final ProductService productService;
     private final PaymentService paymentService;
     private final OrderMapper orderMapper;
-    private final AccountService accountService;
+    private final StaffService staffService;
 
     public boolean checkIfOrderExists(String orderId) {
         return orderRepository.existsById(orderId);
@@ -102,26 +99,37 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(@Valid CreateOrderReq orderReq, HttpServletRequest httpRequest) throws BadRequestException {
-            validateOrderItems(orderReq.getItems()); // validate order items
+        validateOrderItems(orderReq.getItems()); // validate order items
 
-            Customer customer = resolveCustomer(orderReq); // resolve customer
+        Customer customer = resolveCustomer(orderReq); // resolve customer
 
-            Order order = orderMapper.toOrder(orderReq); // create order entity
-            order.setCustomer(customer);
+        Order order = orderMapper.toOrder(orderReq); // create order entity
+        order.setCustomer(customer);
 
-            // Process order items and calc total amount
-            OrderItemsRes orderItems = processOrderItems(orderReq.getItems(), order);
-            order.setTotalAmount(orderItems.getTotalAmount()); // Total Amount of Order
-            order.setOrderedProduct(orderItems.getOrderProducts());
-            order.setStatus(OrderStatus.UNPAID);
-            // Handle paymentMethod
-            return processPayment(order, orderReq.getPaymentMethod(), httpRequest);
+        if(order instanceof OnlineOrder) {
+            ((OnlineOrder) order).setEmail(orderReq.getEmail());
+            ((OnlineOrder) order).setAddress(orderReq.getAddress());
+            ((OnlineOrder) order).setShippingFee(orderReq.getShippingFee() != null ? orderReq.getShippingFee() : BigDecimal.ZERO);
+        } else if (order instanceof OfflineOrder) {
+            Staff staff = staffService.getStaffById(orderReq.getStaffId());
+            ((OfflineOrder) order).setStaff(staff);
         }
+
+        // Process order items and calc total amount
+        OrderItemsRes orderItems = processOrderItems(orderReq.getItems(), order);
+        order.setTotalAmount(orderItems.getTotalAmount()); // Total Amount of Order
+        order.setOrderedProducts(orderItems.getOrderProducts());
+        order.setTotalQuantity(orderItems.getTotalQuantity());
+
+        order.setStatus(OrderStatus.UNPAID);
+        // Handle paymentMethod
+        return processPayment(order, orderReq.getPaymentMethod(), httpRequest);
+    }
 
     @Transactional
     public void cancelOrder(String orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new NotFoundException("Order not found" + orderId));
-        List<OrderProduct> orderProducts = order.getOrderedProduct();
+        List<OrderProduct> orderProducts = order.getOrderedProducts();
 
         for(OrderProduct orderProduct : orderProducts) {
             int quantity = orderProduct.getQuantity();
@@ -148,14 +156,14 @@ public class OrderService {
         if(orderReq.getCustomerId() != null){
             return customerService.getCustomerById(orderReq.getCustomerId()); // Customer have account
         }
-        Customer customer = customerService.getCustomerByPhone(orderReq.getRecipientPhone()); // Customer have no account
+        Customer customer = customerService.getCustomerByPhone(orderReq.getPhone()); // Customer have no account
         if(customer != null){
             return customer;
         }
         else {
             CreateCustomerReq customerReq = CreateCustomerReq.builder()
-                    .fullName(orderReq.getRecipientName())
-                    .phone(orderReq.getRecipientPhone())
+                    .fullName(orderReq.getName())
+                    .phone(orderReq.getPhone())
                     .build();
             return customerService.createCustomer(customerReq); // Create new Customer
         }
@@ -165,6 +173,7 @@ public class OrderService {
     private OrderItemsRes processOrderItems(List<OrderItemReq> items, Order order) throws BadRequestException {
         List<OrderProduct> orderProducts = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
+        int totalQuantity = 0;
 
         for (OrderItemReq item : items) {
             Product product = productService.getProductByIdAndAvailableTrue(item.getProductId());
@@ -181,8 +190,9 @@ public class OrderService {
 
             orderProducts.add(orderProduct);
             totalAmount = totalAmount.add(orderProduct.getTotalPrice());
+            totalQuantity += orderProduct.getQuantity();
         }
-        return new OrderItemsRes(orderProducts, totalAmount);
+        return new OrderItemsRes(orderProducts, totalAmount, totalQuantity);
     }
 
     // Helper methods validate Order Items

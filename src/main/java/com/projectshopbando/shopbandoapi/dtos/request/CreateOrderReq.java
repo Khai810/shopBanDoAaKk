@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -16,19 +17,24 @@ import java.util.List;
 @Builder
 public class CreateOrderReq {
 
-    private String customerId;
+    private String customerId; // Optional: can be null for guest checkout
+    private String staffId; // Optional: can be null for online orders
 
     @NotBlank(message = "recipient name must not be blank")
-    private String recipientName;
+    private String name;
 
     @NotBlank(message = "recipient phone must not be blank")
-    private String recipientPhone;
+    private String phone;
 
-    @NotBlank(message = "recipient email must not be blank")
-    private String recipientEmail;
+    private BigDecimal discount;
 
-    @NotBlank(message = "recipient address must not be blank")
-    private String recipientAddress;
+    private BigDecimal tax;
+
+    private  BigDecimal shippingFee;
+
+    private String email;
+
+    private String address;
 
     @NotNull(message = "Items must not be empty")
     private List<@Valid OrderItemReq> items;
@@ -37,4 +43,7 @@ public class CreateOrderReq {
     private String paymentMethod;
 
     private String note;
+
+    private String type;
+
 }
