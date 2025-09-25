@@ -58,6 +58,11 @@ public class CustomerService {
         return customerRepository.findByPhone(phone).orElse(null);
     }
 
+    public Page<Customer> getAllCustomerHavingAccount(int page, int size, String phone) {
+        Pageable pageable = PageRequest.of(page, size);
+        return customerRepository.findByPhoneContainingHavingAccount(phone, pageable);
+    }
+
     public Customer getCustomerById(String id) {
         return customerRepository.findById(id).orElse(null);
     }

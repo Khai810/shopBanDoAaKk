@@ -20,7 +20,7 @@ public class CustomerController {
     private final CustomerService customerService;
     private final CustomerMapper customerMapper;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
     @GetMapping()
     public ResponseEntity<ResponseObject<?>> getAllCustomers(@RequestParam int page
             , @RequestParam int size, @RequestParam String phone) {
@@ -30,7 +30,7 @@ public class CustomerController {
                         .build());
     }
 
-    @PostAuthorize("returnObject.body.data.id == authentication.name || hasRole('ADMIN')")
+    @PostAuthorize("returnObject.body.data.id == authentication.name || hasRole('ADMIN') || hasRole('STAFF')")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject<?>> getCustomerById(@PathVariable String id) {
         return ResponseEntity.status(HttpStatus.OK)
@@ -39,7 +39,17 @@ public class CustomerController {
                         .build());
     }
 
-    @PreAuthorize("hasRole('ADMIN') || #id == authentication.name")
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
+    @GetMapping("/with-account")
+    public ResponseEntity<ResponseObject<?>> getAllCustomerHavingAccount(@RequestParam int page
+            , @RequestParam int size, @RequestParam String phone) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(customerService.getAllCustomerHavingAccount(page, size, phone).map(customerMapper::toCustomerRes))
+                        .build());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')|| hasRole('STAFF') || #id == authentication.name")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseObject<?>> updateCustomer(@PathVariable String id, @RequestBody UpdateCustomerReq req) {
         return ResponseEntity.status(HttpStatus.OK)
