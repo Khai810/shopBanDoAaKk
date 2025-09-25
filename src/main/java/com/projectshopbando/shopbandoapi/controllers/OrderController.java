@@ -72,7 +72,8 @@ public class OrderController {
     }
 
     @PostMapping()
-    public ResponseEntity<ResponseObject<?>> createOrder(@RequestBody @Valid CreateOrderReq orderRequest, HttpServletRequest httpRequest) throws BadRequestException {
+    public ResponseEntity<ResponseObject<?>> createOrder(@RequestBody @Valid CreateOrderReq orderRequest
+            , HttpServletRequest httpRequest) throws BadRequestException {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseObject.builder()
                         .data(orderService.createOrder(orderRequest

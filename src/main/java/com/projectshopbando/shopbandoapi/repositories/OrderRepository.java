@@ -15,7 +15,7 @@ public interface OrderRepository extends JpaRepository<Order, String> {
 
     @Query("SELECT o FROM Order o WHERE " +
             "(:status IS NULL OR o.status =:status) AND "+
-            "(:search IS NULL OR o.recipientEmail LIKE %:search% OR o.recipientPhone LIKE %:search%)" +
+            "(:search IS NULL OR o.phone LIKE %:search%) " +
             "ORDER BY o.orderDate DESC")
     Page<Order> adminFindAll(String search, OrderStatus status, Pageable pageable);
 

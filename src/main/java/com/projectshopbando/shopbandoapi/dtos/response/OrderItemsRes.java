@@ -14,4 +14,5 @@ import java.util.List;
 public class OrderItemsRes {
     List<OrderProduct> orderProducts;
     private BigDecimal totalAmount;
+    private int totalQuantity;
 }

@@ -3,5 +3,6 @@ package com.projectshopbando.shopbandoapi.enums;
 public enum PaymentMethod {
     VNPAY,
     COD,
-    PICKUP
+    CASH,
+    BANK_TRANSFER
 }

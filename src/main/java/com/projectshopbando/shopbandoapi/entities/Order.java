@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,26 +18,29 @@ import java.util.List;
 @Table(name = "orders")
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
+@SuperBuilder
 @Data
-public class Order {
+@Inheritance(strategy = InheritanceType.JOINED)
+public abstract class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    private String recipientName;
+    private String name;
 
-    private String recipientPhone;
-
-    private String recipientEmail;
-
-    private String recipientAddress;
+    private String phone;
 
     private LocalDateTime orderDate;
 
     private BigDecimal totalAmount;
 
     private String note;
+
+    private BigDecimal tax = BigDecimal.ZERO;
+
+    private BigDecimal discount = BigDecimal.ZERO;
+
+    private int totalQuantity = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -47,7 +51,7 @@ public class Order {
     private OrderStatus status;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderProduct> orderedProduct  = new ArrayList<>();
+    private List<OrderProduct> orderedProducts  = new ArrayList<>();
 
     @ManyToOne()
     @JoinColumn(name = "customer_id")
