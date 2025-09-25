@@ -26,6 +26,8 @@ public class CreateOrderReq {
     @NotBlank(message = "recipient phone must not be blank")
     private String phone;
 
+    private BigDecimal totalAmount;
+
     private BigDecimal discount;
 
     private BigDecimal tax;

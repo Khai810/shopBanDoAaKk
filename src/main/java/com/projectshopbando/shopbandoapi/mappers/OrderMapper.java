@@ -19,6 +19,7 @@ public interface OrderMapper {
 
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "paymentMethod", ignore = true)
+    @Mapping(target = "totalAmount", ignore = true)
     Order toOrder(CreateOrderReq request);
 
     @ObjectFactory
@@ -45,6 +46,7 @@ public interface OrderMapper {
         } else if (order instanceof OnlineOrder online) {
             dto.setEmail(online.getEmail());
             dto.setAddress(online.getAddress());
+            dto.setShippingFee(online.getShippingFee());
         }
     }
 }

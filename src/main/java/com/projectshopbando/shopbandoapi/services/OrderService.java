@@ -238,6 +238,15 @@ public class OrderService {
                     .order(orderMapper.toOrderDto(order))
                     .payment(paymentService.initPaymentUrl(paymentRequest))
                     .build();
+        } else if(PaymentMethod.CASH.name().equals(paymentMethod) ||
+                PaymentMethod.BANK_TRANSFER.name().equals(paymentMethod)) {
+            order.setPaymentMethod(PaymentMethod.valueOf(paymentMethod));
+            order.setStatus(OrderStatus.COMPLETED);
+            order = orderRepository.save(order);
+            return OrderResponse.builder()
+                    .order(orderMapper.toOrderDto(order))
+                    .payment(null)
+                    .build();
         }
         else throw new BadRequestException("Invalid payment method");
     }
