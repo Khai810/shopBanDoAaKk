@@ -17,4 +17,10 @@ public interface CustomerRepository extends JpaRepository<Customer, String> {
     Page<Customer> findByPhoneContainingOrderByCreatedAtDesc(String phone, Pageable pageable);
 
     Optional<Customer> findByPhone(String phone);
+
+    @Query("SELECT c FROM Customer c " +
+            "WHERE (:phone IS NULL OR c.phone LIKE CONCAT('%', :phone, '%')) " +
+            "AND c.account IS NOT NULL " +
+            "ORDER BY c.createdAt DESC")
+    Page<Customer> findByPhoneContainingHavingAccount(String phone, Pageable pageable);
 }
