@@ -1,6 +1,5 @@
 package com.projectshopbando.shopbandoapi.repositories;
 
-import com.projectshopbando.shopbandoapi.dtos.response.ProductStatsDTO;
 import com.projectshopbando.shopbandoapi.entities.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
