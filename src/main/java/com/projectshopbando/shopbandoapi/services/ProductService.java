@@ -2,6 +2,7 @@ package com.projectshopbando.shopbandoapi.services;
 
 import com.projectshopbando.shopbandoapi.dtos.request.ProductCreateRequest;
 import com.projectshopbando.shopbandoapi.dtos.request.UpdateProductReq;
+import com.projectshopbando.shopbandoapi.dtos.response.ProductStatsDTO;
 import com.projectshopbando.shopbandoapi.entities.Category;
 import com.projectshopbando.shopbandoapi.entities.Product;
 import com.projectshopbando.shopbandoapi.entities.ProductSize;
@@ -100,5 +101,17 @@ public class ProductService {
                 .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
         product.setAvailable(false);
         productRepository.save(product);
+    }
+
+    public List<ProductStatsDTO> getProductStats(Integer year, Integer month) {
+        List<Object[]> results = productRepository.getProductStats(year, month);
+        return results.stream()
+                .map(record -> ProductStatsDTO.builder()
+                        .id(((Number) record[0]).longValue())
+                        .name((String) record[1])
+                        .totalRevenue((BigDecimal) record[2])
+                        .totalUnitsSold(((Number) record[3]).intValue())
+                        .build())
+                .toList();
     }
 }

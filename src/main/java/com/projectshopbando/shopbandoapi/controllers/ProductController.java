@@ -113,4 +113,12 @@ public class ProductController {
                         .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
+    @GetMapping("/admin/stats")
+    public ResponseEntity<ResponseObject<?>> getProductStats(@RequestParam int year, @RequestParam(required = false) Integer month) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(productService.getProductStats(year, month))
+                        .build());
+    }
 }

@@ -1,5 +1,6 @@
 package com.projectshopbando.shopbandoapi.repositories;
 
+import com.projectshopbando.shopbandoapi.dtos.response.ProductStatsDTO;
 import com.projectshopbando.shopbandoapi.entities.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,4 +34,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "p.available = true ORDER BY p.createdAt DESC")
     Page<Product> searchWithConditions(Long categoryId, Long excludeId, String name
             , BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+
+
+    @Query("SELECT p.id AS id, p.name AS name, SUM(op.totalPrice) as totalRevenue, SUM(op.quantity) AS totalUnitsSold FROM Product p " +
+            "JOIN OrderProduct op ON p.id = op.product.id " +
+            "JOIN op.order o " +
+            "WHERE o.status IN ('PREPARING', 'SHIPPING', 'COMPLETED') " +
+            "AND (:month IS NULL OR MONTH(o.orderDate) = :month) " +
+            "AND YEAR(o.orderDate) = :year " +
+            "GROUP BY p.id, p.name " +
+            "ORDER BY totalRevenue DESC " +
+            "LIMIT 5")
+    List<Object[]> getProductStats(Integer year, Integer month);
+
 }
