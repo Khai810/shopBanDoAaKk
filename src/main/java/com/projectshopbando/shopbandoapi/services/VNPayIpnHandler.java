@@ -22,6 +22,7 @@ import static com.projectshopbando.shopbandoapi.config.VnPayConfig.secretKey;
 @Service
 public class VNPayIpnHandler {
     private final OrderService orderService;
+    private final EmailSenderService emailSenderService;
 
     public IpnRes ipnHandler(Map<String, String> params) {
         try {
@@ -73,6 +74,7 @@ public class VNPayIpnHandler {
 
             if (responseCode.equals("00")) {
                 orderService.updateOrderStatus(order, OrderStatus.PREPARING);
+                emailSenderService.sendOrderConfirmationEmail(order);
                 return IpnResConst.SUCCESS;
             } else {
                 orderService.cancelOrder(orderId);

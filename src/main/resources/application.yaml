@@ -27,6 +27,22 @@ spring:
   mvc:
     servlet:
       path: /api
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: pqk12375@gmail.com
+    password: onto rbcz wfyk oswh
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+frontend:
+  url: http://localhost:3000
+
 jwt:
   signerKey: QSteYc1j62GRm00tZnCI3Xj/s3s28uVxr51yA3zl6Aa53UqaO9XeLS65XuKtAA2E
 

@@ -41,6 +41,7 @@ public class OrderService {
     private final PaymentService paymentService;
     private final OrderMapper orderMapper;
     private final StaffService staffService;
+    private final EmailSenderService emailSenderService;
 
     public boolean checkIfOrderExists(String orderId) {
         return orderRepository.existsById(orderId);
@@ -106,6 +107,12 @@ public class OrderService {
         Order order = orderMapper.toOrder(orderReq); // create order entity
         order.setCustomer(customer);
 
+        // Process order items and calc total amount
+        OrderItemsRes orderItems = processOrderItems(orderReq.getItems(), order);
+        order.setTotalAmount(orderItems.getTotalAmount()); // Total Amount of Order
+        order.setOrderedProducts(orderItems.getOrderProducts());
+        order.setTotalQuantity(orderItems.getTotalQuantity());
+
         if(order instanceof OnlineOrder) {
             ((OnlineOrder) order).setEmail(orderReq.getEmail());
             ((OnlineOrder) order).setAddress(orderReq.getAddress());
@@ -114,12 +121,6 @@ public class OrderService {
             Staff staff = staffService.getStaffById(orderReq.getStaffId());
             ((OfflineOrder) order).setStaff(staff);
         }
-
-        // Process order items and calc total amount
-        OrderItemsRes orderItems = processOrderItems(orderReq.getItems(), order);
-        order.setTotalAmount(orderItems.getTotalAmount()); // Total Amount of Order
-        order.setOrderedProducts(orderItems.getOrderProducts());
-        order.setTotalQuantity(orderItems.getTotalQuantity());
 
         order.setStatus(OrderStatus.UNPAID);
         // Handle paymentMethod
@@ -217,7 +218,7 @@ public class OrderService {
             order.setStatus(OrderStatus.PREPARING);
             order.setPaymentMethod(PaymentMethod.COD);
             order = orderRepository.save(order);
-
+            emailSenderService.sendOrderConfirmationEmail(order);
             return OrderResponse.builder()
                     .order(orderMapper.toOrderDto(order))
                     .payment(null)
