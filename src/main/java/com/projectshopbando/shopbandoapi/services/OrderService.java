@@ -52,7 +52,8 @@ public class OrderService {
         return order.getStatus();
     }
 
-    public void updateOrderStatus(Order order, OrderStatus status) {
+    public void updateOrderStatus(String id, OrderStatus status) {
+        Order order = orderRepository.findById(id).orElseThrow(() -> new NotFoundException(id));
         order.setStatus(status);
         orderRepository.save(order);
     }

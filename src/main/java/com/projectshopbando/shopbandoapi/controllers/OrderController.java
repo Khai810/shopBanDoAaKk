@@ -2,6 +2,7 @@ package com.projectshopbando.shopbandoapi.controllers;
 
 import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderReq;
 import com.projectshopbando.shopbandoapi.dtos.response.ResponseObject;
+import com.projectshopbando.shopbandoapi.enums.OrderStatus;
 import com.projectshopbando.shopbandoapi.mappers.OrderMapper;
 import com.projectshopbando.shopbandoapi.services.OrderService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,6 +64,7 @@ public class OrderController {
                         .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF') || authentication.name == #customerId")
     @GetMapping("/customers")
     public ResponseEntity<ResponseObject<?>> getOrderByCustomerId(@RequestParam String customerId){
         return ResponseEntity.status(HttpStatus.OK)
@@ -82,6 +84,7 @@ public class OrderController {
                 );
     }
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseObject<?>> deleteOrder(@PathVariable String id){
         return ResponseEntity.status(HttpStatus.OK)
@@ -92,4 +95,11 @@ public class OrderController {
         );
     }
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
+    @PutMapping("/admin/{id}")
+    public  ResponseEntity<?> updateOrderStatus(@PathVariable String id, @RequestParam String status){
+        OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+        orderService.updateOrderStatus(id, orderStatus);
+        return ResponseEntity.ok().build();
+    }
 }

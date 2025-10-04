@@ -73,7 +73,7 @@ public class VNPayIpnHandler {
             }
 
             if (responseCode.equals("00")) {
-                orderService.updateOrderStatus(order, OrderStatus.PREPARING);
+                orderService.updateOrderStatus(order.getId(), OrderStatus.PREPARING);
                 emailSenderService.sendOrderConfirmationEmail(order);
                 return IpnResConst.SUCCESS;
             } else {
