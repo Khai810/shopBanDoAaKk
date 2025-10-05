@@ -12,5 +12,7 @@ import lombok.NoArgsConstructor;
 public class CategoryRes {
     private Long id;
     private String name;
+    private String imageUrl;
     private String description;
+    private Boolean isDisabled;
 }

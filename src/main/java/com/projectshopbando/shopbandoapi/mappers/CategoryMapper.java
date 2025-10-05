@@ -1,9 +1,11 @@
 package com.projectshopbando.shopbandoapi.mappers;
 
 import com.projectshopbando.shopbandoapi.dtos.request.CategoryCreateReq;
+import com.projectshopbando.shopbandoapi.dtos.request.UpdateCategoryReq;
 import com.projectshopbando.shopbandoapi.dtos.response.CategoryRes;
 import com.projectshopbando.shopbandoapi.entities.Category;
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 
@@ -14,4 +16,6 @@ public interface CategoryMapper {
     CategoryRes toCategoryRes(Category category);
 
     List<CategoryRes> toCategoryResList(List<Category> category);
+
+    void updateCategory(@MappingTarget Category category, UpdateCategoryReq request);
 }

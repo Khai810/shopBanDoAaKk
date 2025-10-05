@@ -24,8 +24,14 @@ public class Category implements Serializable {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "description")
+    @Column(name = "image_url")
+    private String imageUrl;
+
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "is_disabled")
+    private Boolean isDisabled = false;
 
     @OneToMany(mappedBy = "category",cascade = CascadeType.REMOVE)
     @JsonManagedReference

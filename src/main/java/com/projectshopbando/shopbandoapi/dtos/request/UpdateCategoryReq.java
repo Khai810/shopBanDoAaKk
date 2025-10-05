@@ -1,11 +1,11 @@
 package com.projectshopbando.shopbandoapi.dtos.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class CategoryCreateReq {
+public class UpdateCategoryReq {
+
     @NotBlank(message = "Category name must not empty")
     private String name;
 
@@ -15,6 +15,5 @@ public class CategoryCreateReq {
     @NotBlank(message = "Description must not empty")
     private String description;
 
-    @NotNull(message = "isDisabled must not null")
     private Boolean isDisabled;
 }

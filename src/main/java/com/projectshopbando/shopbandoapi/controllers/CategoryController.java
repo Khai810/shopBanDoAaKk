@@ -1,6 +1,7 @@
 package com.projectshopbando.shopbandoapi.controllers;
 
 import com.projectshopbando.shopbandoapi.dtos.request.CategoryCreateReq;
+import com.projectshopbando.shopbandoapi.dtos.request.UpdateCategoryReq;
 import com.projectshopbando.shopbandoapi.dtos.response.ResponseObject;
 import com.projectshopbando.shopbandoapi.mappers.CategoryMapper;
 import com.projectshopbando.shopbandoapi.services.CategoryService;
@@ -26,16 +27,36 @@ public class CategoryController {
                         .build());
     }
 
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
+    public ResponseEntity<ResponseObject<?>> getAllCategoryAdmin(@RequestParam int page,@RequestParam int size,
+                                                                 @RequestParam(required = false) String search) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(categoryService.getAllCategoryAdmin(page, size, search)
+                                .map(categoryMapper::toCategoryRes))
+                        .build());
+    }
+
+    @GetMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
+    public ResponseEntity<ResponseObject<?>> getCategoryByIdAdmin(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(categoryMapper.toCategoryRes(categoryService.getCategoryById(id)))
+                        .build());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject<?>> getCategoryById(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
                         .data(categoryMapper.toCategoryRes(
-                                categoryService.getCategoryById(id)))
+                                categoryService.getCategoryByIdAndIsDisabledFalse(id)))
                         .build());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
     @PostMapping()
     public ResponseEntity<ResponseObject<?>> createCategory(@RequestBody CategoryCreateReq req) {
         return ResponseEntity.status(HttpStatus.OK)
@@ -45,4 +66,13 @@ public class CategoryController {
                         .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
+    @PutMapping("/{id}")
+    public  ResponseEntity<ResponseObject<?>> updateCategory(@PathVariable Long id, @RequestBody UpdateCategoryReq req) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(categoryMapper.toCategoryRes(
+                                categoryService.updateCategory(id, req)))
+                        .build());
+    }
 }
