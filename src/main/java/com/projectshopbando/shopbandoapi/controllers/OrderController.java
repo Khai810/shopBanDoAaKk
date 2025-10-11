@@ -102,4 +102,13 @@ public class OrderController {
         orderService.updateOrderStatus(id, orderStatus);
         return ResponseEntity.ok().build();
     }
+
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
+    @GetMapping("/admin/status-stats")
+    public ResponseEntity<ResponseObject<?>> getOrderStatusCount(@RequestParam Integer year, @RequestParam @Min(value = 0) Integer month) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseObject.builder()
+                        .data(orderService.getOrderStatusCount(year, month))
+                        .build());
+    }
 }

@@ -8,6 +8,7 @@ import com.projectshopbando.shopbandoapi.dtos.request.OrderItemReq;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderItemsRes;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderResponse;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderStatsDTO;
+import com.projectshopbando.shopbandoapi.dtos.response.OrderStatusCountRes;
 import com.projectshopbando.shopbandoapi.entities.*;
 import com.projectshopbando.shopbandoapi.enums.OrderStatus;
 import com.projectshopbando.shopbandoapi.enums.PaymentMethod;
@@ -130,6 +131,15 @@ public class OrderService {
         order.setStatus(OrderStatus.UNPAID);
         // Handle paymentMethod
         return processPayment(order, orderReq.getPaymentMethod(), httpRequest);
+    }
+
+    public List<OrderStatusCountRes> getOrderStatusCount(Integer year, Integer month) {
+        if(month != null && month == 0 ) {
+            month = null;
+        }
+        return orderRepository.orderStatusCount(year, month).stream()
+                .map(row -> new OrderStatusCountRes(row[0].toString() , Integer.parseInt(row[1].toString())))
+                .toList();
     }
 
     @Transactional

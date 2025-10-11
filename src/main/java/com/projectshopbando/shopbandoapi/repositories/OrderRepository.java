@@ -29,7 +29,7 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "       AND status IN ('PREPARING', 'SHIPPING', 'COMPLETED')\n" +
             "       GROUP BY YEAR(order_date), MONTH(order_date)\n" +
             "       ORDER BY MONTH(order_date) ASC;", nativeQuery = true)
-    List<Object[]> getOrderYearStats(int year);
+    List<Object[]> getOrderYearStats(Integer year);
 
     @Query(value = "SELECT YEAR(order_date) AS Year,\n" +
             "       MONTH(order_date) AS Month,\n" +
@@ -41,5 +41,12 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "       AND status IN ('PREPARING', 'SHIPPING', 'COMPLETED')\n" +
             "       GROUP BY YEAR(order_date), MONTH(order_date), WEEK(order_date)\n" +
             "       ORDER BY WEEK(order_date) ASC;", nativeQuery = true)
-    List<Object[]> getOrderMonthStats(int year, int month);
+    List<Object[]> getOrderMonthStats(Integer year, Integer month);
+
+    @Query(value = "SELECT o.status AS status, COUNT(*) AS count " +
+            "FROM orders o " +
+            "WHERE (:month IS NULL OR MONTH(o.order_date) = :month) "+
+            " AND YEAR(o.order_date) = :year " +
+            "GROUP BY o.status", nativeQuery = true)
+    List<Object[]> orderStatusCount(Integer year, Integer month);
 }
