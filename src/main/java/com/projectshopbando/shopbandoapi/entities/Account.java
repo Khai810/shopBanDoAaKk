@@ -9,7 +9,8 @@ import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
-@Table(name = "accounts")
+@Table(name = "accounts", indexes = {
+        @Index(name = "idx_account_email", columnList = "email")})
 @Setter
 @Getter
 @Builder

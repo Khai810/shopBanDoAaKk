@@ -10,11 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, String> {
-    boolean existsByCustomer_Phone(String phone);
 
     Optional<Account> findByCustomer_Id(String id);
-
-    Optional<Account> findByCustomer_Phone(String phone);
 
     Page<Account> findByCustomer_FullNameContainingOrCustomer_PhoneContainingOrderByCustomer_CreatedAtDesc(String fullName, String phone, Pageable pageable);
 
