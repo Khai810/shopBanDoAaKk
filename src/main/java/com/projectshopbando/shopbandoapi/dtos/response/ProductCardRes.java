@@ -16,6 +16,7 @@ public class ProductCardRes implements Serializable {
     private Long id;
     private String name;
     private BigDecimal price;
+    private BigDecimal discountPercent;
     private String thumbnail;
     private Long categoryId;
     private boolean inStock; // New field to indicate stock status

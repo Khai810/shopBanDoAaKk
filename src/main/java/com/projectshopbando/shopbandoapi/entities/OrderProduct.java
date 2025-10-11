@@ -20,6 +20,7 @@ public class OrderProduct {
     private Integer quantity;
 
     private BigDecimal unitPrice;
+    private BigDecimal discountPercent;
     private BigDecimal totalPrice;
 
     @ManyToOne()

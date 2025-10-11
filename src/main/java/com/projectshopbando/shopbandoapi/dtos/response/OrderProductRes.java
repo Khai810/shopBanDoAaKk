@@ -16,6 +16,7 @@ public class OrderProductRes {
     private Integer quantity;
 
     private BigDecimal unitPrice;
+    private BigDecimal discountPercent;
     private BigDecimal totalPrice;
 
     private Long productId;

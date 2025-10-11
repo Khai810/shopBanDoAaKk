@@ -1,10 +1,7 @@
 package com.projectshopbando.shopbandoapi.dtos.request;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
@@ -23,6 +20,10 @@ public class UpdateProductReq {
     @NotNull(message = "Product price must not be empty")
     @Positive(message = "Product price must > 0")
     private BigDecimal price;
+
+    @DecimalMin(value = "0.0", inclusive = true, message = "Discount percent must be >= 0")
+    @DecimalMax(value = "100.0", inclusive = true, message = "Discount percent must be <= 100")
+    private BigDecimal discountPercent;
 
     @NotNull(message = "In stock must not be empty")
     private Boolean inStock;

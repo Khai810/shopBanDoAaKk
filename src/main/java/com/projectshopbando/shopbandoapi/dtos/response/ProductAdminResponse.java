@@ -14,6 +14,7 @@ public class ProductAdminResponse {
     private String description;
     private List<String> color;
     private BigDecimal price;
+    private BigDecimal discountPercent;
     private Boolean inStock;
     private Long categoryId;
     private String thumbnail;

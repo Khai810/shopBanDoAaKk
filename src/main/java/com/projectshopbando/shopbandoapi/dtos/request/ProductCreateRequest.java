@@ -27,6 +27,10 @@ public class ProductCreateRequest {
     @Positive(message = "Product price must > 0")
     private BigDecimal price;
 
+    @DecimalMin(value = "0.0", inclusive = true, message = "Discount percent must be >= 0")
+    @DecimalMax(value = "100.0", inclusive = true, message = "Discount percent must be <= 100")
+    private BigDecimal discountPercent;
+
     @NotNull(message = "In stock must not be empty")
     private Boolean inStock;
 

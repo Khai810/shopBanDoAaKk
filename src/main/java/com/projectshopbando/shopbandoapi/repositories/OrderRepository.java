@@ -40,6 +40,6 @@ public interface OrderRepository extends JpaRepository<Order, String> {
             "       WHERE YEAR(order_date) = :year AND MONTH(order_date) = :month \n" +
             "       AND status IN ('PREPARING', 'SHIPPING', 'COMPLETED')\n" +
             "       GROUP BY YEAR(order_date), MONTH(order_date), WEEK(order_date)\n" +
-            "       ORDER BY MONTH(order_date) ASC;", nativeQuery = true)
+            "       ORDER BY WEEK(order_date) ASC;", nativeQuery = true)
     List<Object[]> getOrderMonthStats(int year, int month);
 }

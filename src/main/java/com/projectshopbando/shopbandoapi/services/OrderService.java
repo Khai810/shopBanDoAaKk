@@ -84,8 +84,8 @@ public class OrderService {
                     .toList();
         }else if(month >= 1 && month <= 12) {
             return orderRepository.getOrderMonthStats(year, month).stream()
-                    .map(row -> new OrderStatsDTO( year + "-" + month + "-" + row[0].toString()
-                            , parseLong(row[1].toString()), new BigDecimal(row[2].toString())))
+                    .map(row -> new OrderStatsDTO( year + "-" + row[2].toString()
+                            , parseLong(row[3].toString()), new BigDecimal(row[4].toString())))
                     .toList();
         }
         try {
@@ -110,6 +110,10 @@ public class OrderService {
 
         // Process order items and calc total amount
         OrderItemsRes orderItems = processOrderItems(orderReq.getItems(), order);
+        if (orderReq.getTotalAmount() != null &&
+                orderReq.getTotalAmount().compareTo(orderItems.getTotalAmount()) != 0) {
+            throw new BadRequestException("Total amount doesn't match");
+        }
         order.setTotalAmount(orderItems.getTotalAmount()); // Total Amount of Order
         order.setOrderedProducts(orderItems.getOrderProducts());
         order.setTotalQuantity(orderItems.getTotalQuantity());
@@ -171,7 +175,7 @@ public class OrderService {
         }
     }
 
-    //Helper methods process Order Items
+    //Helper methods process Order Items, calculate total amount and total quantity
     private OrderItemsRes processOrderItems(List<OrderItemReq> items, Order order) throws BadRequestException {
         List<OrderProduct> orderProducts = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -181,17 +185,25 @@ public class OrderService {
             Product product = productService.getProductByIdAndAvailableTrue(item.getProductId());
 
             productService.decreaseProductSizeQuantity(product.getId(), item.getSize(), item.getQuantity());
+            // calculate prices with discount
+            BigDecimal unitPrice = product.getPrice();
+            BigDecimal discountPercent = product.getDiscountPercent() != null ? product.getDiscountPercent() : BigDecimal.ZERO;
+
+            BigDecimal discountMultiplier = BigDecimal.ONE.subtract(discountPercent.divide(BigDecimal.valueOf(100)));
+            BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())).multiply(discountMultiplier);
+
             OrderProduct orderProduct = OrderProduct.builder()
                     .product(product)
                     .order(order)
                     .quantity(item.getQuantity())
                     .size(item.getSize())
-                    .unitPrice(product.getPrice())
-                    .totalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .unitPrice(unitPrice)
+                    .discountPercent(discountPercent)
+                    .totalPrice(totalPrice)
                     .build();
 
             orderProducts.add(orderProduct);
-            totalAmount = totalAmount.add(orderProduct.getTotalPrice());
+            totalAmount = totalAmount.add(totalPrice);
             totalQuantity += orderProduct.getQuantity();
         }
         return new OrderItemsRes(orderProducts, totalAmount, totalQuantity);
