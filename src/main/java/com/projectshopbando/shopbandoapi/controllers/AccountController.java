@@ -7,6 +7,7 @@ import com.projectshopbando.shopbandoapi.services.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,34 +15,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/accounts")
 public class AccountController {
     private final AccountService accountService;
-    private final AccountMapper accountMapper;
-//
-//    @PostMapping()
-//    public ResponseEntity<ResponseObject<?>> createUser(@RequestBody CreateUserReq request) throws BadRequestException {
-//        return ResponseEntity.status(HttpStatus.OK)
-//                .body(ResponseObject.builder()
-//                        .data(userMapper.toUserRes(accountService.createUser(request)))
-//                        .build());
-//    }
-//
-//    @GetMapping("/{id}")
-//    public ResponseEntity<ResponseObject<?>> getUserById(@PathVariable String id){
-//        return ResponseEntity.status(HttpStatus.OK)
-//                .body(ResponseObject.builder()
-//                        .data(userMapper.toUserRes(accountService.getUserById(id)))
-//                        .build());
-//    }
-//
-//    @GetMapping()
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public ResponseEntity<ResponseObject<?>> getAllUsers(@RequestParam int page
-//            , @RequestParam int size, @RequestParam(required = false) String search){
-//        return ResponseEntity.status(HttpStatus.OK)
-//                .body(ResponseObject.builder()
-//                        .data(accountService.getAllUsers(page, size, search).map(userMapper::toUserRes))
-//                        .build());
-//    }
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF') || #customerId == authentication.name")
     @PutMapping("/{customerId}")
     public ResponseEntity<ResponseObject<?>> changePassword(@RequestBody ChangePasswordReq changePasswordReq
             , @PathVariable String customerId){
@@ -50,12 +25,4 @@ public class AccountController {
                         .data(accountService.changePassword(changePasswordReq, customerId))
                         .build());
     }
-//
-//    @PutMapping("/{id}")
-//    public ResponseEntity<ResponseObject<?>> updateAccount(@RequestBody UpdateAccountReq request, @PathVariable String id){
-//        return ResponseEntity.status(HttpStatus.OK)
-//                .body(ResponseObject.builder()
-//                        .data(userMapper.toUserRes(accountService.updateUser(request, id)))
-//                        .build());
-//    }
 }

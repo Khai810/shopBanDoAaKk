@@ -5,6 +5,7 @@ import com.projectshopbando.shopbandoapi.services.UploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class UploadController {
     private final UploadService uploadService;
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
     @GetMapping("/sign")
     public ResponseEntity<ResponseObject<?>> getSignature(){
         return ResponseEntity.status(HttpStatus.OK)
@@ -21,6 +23,7 @@ public class UploadController {
                         .build());
     }
 
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
     @DeleteMapping("/{publicId}")
     public ResponseEntity<ResponseObject<?>> deleteFile(@PathVariable String publicId){
         uploadService.deleteFile(publicId);

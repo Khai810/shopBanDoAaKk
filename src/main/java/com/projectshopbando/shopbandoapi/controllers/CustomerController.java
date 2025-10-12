@@ -40,7 +40,7 @@ public class CustomerController {
     }
 
     @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
-    @GetMapping("/with-account")
+    @GetMapping("/admin/with-account")
     public ResponseEntity<ResponseObject<?>> getAllCustomerHavingAccount(@RequestParam int page
             , @RequestParam int size, @RequestParam String phone) {
         return ResponseEntity.status(HttpStatus.OK)

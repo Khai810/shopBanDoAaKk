@@ -84,7 +84,7 @@ public class ProductController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping()
+    @PostMapping("/admin")
     public ResponseEntity<ResponseObject<ProductResponse>> createProduct(@RequestBody ProductCreateRequest request){
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseObject.<ProductResponse>builder()
@@ -94,7 +94,7 @@ public class ProductController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/{id}/disable")
+    @PostMapping("/admin/{id}/disable")
     public ResponseEntity<ResponseObject<?>> disableProduct(@PathVariable Long id){
         productService.disableProduct(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT)

@@ -57,7 +57,7 @@ public class CategoryController {
     }
 
     @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
-    @PostMapping()
+    @PostMapping("/admin")
     public ResponseEntity<ResponseObject<?>> createCategory(@RequestBody CategoryCreateReq req) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
@@ -67,7 +67,7 @@ public class CategoryController {
     }
 
     @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF')")
-    @PutMapping("/{id}")
+    @PutMapping("/admin/{id}")
     public  ResponseEntity<ResponseObject<?>> updateCategory(@PathVariable Long id, @RequestBody UpdateCategoryReq req) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseObject.builder()
