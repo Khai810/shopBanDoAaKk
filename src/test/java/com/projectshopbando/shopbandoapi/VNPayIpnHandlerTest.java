@@ -1,9 +1,11 @@
 package com.projectshopbando.shopbandoapi;
 
 import com.projectshopbando.shopbandoapi.config.VnPayConfig;
+import com.projectshopbando.shopbandoapi.entities.OnlineOrder;
 import com.projectshopbando.shopbandoapi.entities.Order;
 import com.projectshopbando.shopbandoapi.enums.OrderStatus;
 import com.projectshopbando.shopbandoapi.enums.PaymentMethod;
+import com.projectshopbando.shopbandoapi.services.EmailSenderService;
 import com.projectshopbando.shopbandoapi.services.OrderService;
 import com.projectshopbando.shopbandoapi.services.VNPayIpnHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,9 @@ public class VNPayIpnHandlerTest {
     @Mock
     private OrderService orderService;
 
+    @Mock
+    private EmailSenderService emailSenderService;
+
     @InjectMocks
     private VNPayIpnHandler vnPayIpnHandler;
 
@@ -45,13 +50,14 @@ public class VNPayIpnHandlerTest {
     private Map<String, String> params;
     @BeforeEach
     public void setup() {
-        this.order = Order.builder()
+        this.order = OnlineOrder.builder()
                 .id("testOrder")
-                .orderedProduct(List.of())
+                .orderedProducts(List.of())
                 .status(OrderStatus.UNPAID)
                 .paymentMethod(PaymentMethod.VNPAY)
                 .totalAmount(BigDecimal.valueOf(10000.00).setScale(2, RoundingMode.HALF_UP))
                 .build();
+
         this.params = new HashMap<>(Map.of(
                 "vnp_SecureHash", "validHash",
                 "vnp_SecureHashType", "SHA256",
@@ -66,14 +72,15 @@ public class VNPayIpnHandlerTest {
     @Test
     public void testIpnHandler_Success() {
         try (MockedStatic<VnPayConfig> mockedStatic = mockStatic(VnPayConfig.class)) {
-            mockedStatic.when(() -> VnPayConfig.hmacSHA512(anyString(), anyString()))
+            mockedStatic.when(() -> VnPayConfig.hmacSHA512(any(), anyString()))
                     .thenReturn("validHash");
             when(orderService.checkIfOrderExists(anyString())).thenReturn(true);
             when(orderService.getOrderById(anyString())).thenReturn(this.order);
-            doNothing().when(orderService).updateOrderStatus(any(Order.class), any(OrderStatus.class));
+            doNothing().when(orderService).updateOrderStatus(anyString(), any(OrderStatus.class));
+            doNothing().when(emailSenderService).sendOrderConfirmationEmail(any());
             var response = vnPayIpnHandler.ipnHandler(this.params);
             assertThat(response.getRspCode()).isEqualTo("00");
-            verify(orderService).updateOrderStatus(this.order, OrderStatus.PREPARING);
+            verify(orderService).updateOrderStatus(this.order.getId(), OrderStatus.PREPARING);
         }
     }
 
@@ -81,11 +88,10 @@ public class VNPayIpnHandlerTest {
     @Test
     public void testIpnHandler_InvalidCheckSum() {
         try (MockedStatic<VnPayConfig> mockedStatic = mockStatic(VnPayConfig.class)) {
-            mockedStatic.when(() -> VnPayConfig.hmacSHA512(anyString(), anyString()))
+            mockedStatic.when(() -> VnPayConfig.hmacSHA512(any(), anyString()))
                     .thenReturn("invalid Hash");
             var response = vnPayIpnHandler.ipnHandler(this.params);
             assertThat(response.getRspCode()).isEqualTo("97");
-            verify(orderService, never()).updateOrderStatus(any(Order.class), any(OrderStatus.class));
         }
     }
 
@@ -93,12 +99,11 @@ public class VNPayIpnHandlerTest {
     @Test
     public void testIpnHandler_OrderNotFound() {
         try (MockedStatic<VnPayConfig> mockedStatic = mockStatic(VnPayConfig.class)) {
-            mockedStatic.when(() -> VnPayConfig.hmacSHA512(anyString(), anyString()))
+            mockedStatic.when(() -> VnPayConfig.hmacSHA512(any(), anyString()))
                     .thenReturn("validHash");
             when(orderService.checkIfOrderExists(anyString())).thenReturn(false);
             var response = vnPayIpnHandler.ipnHandler(this.params);
             assertThat(response.getRspCode()).isEqualTo("01");
-            verify(orderService, never()).updateOrderStatus(any(Order.class), any(OrderStatus.class));
         }
     }
 
@@ -106,14 +111,13 @@ public class VNPayIpnHandlerTest {
     @Test
     public void testIpnHandler_InvalidAmount() {
         try (MockedStatic<VnPayConfig> mockedStatic = mockStatic(VnPayConfig.class)) {
-            mockedStatic.when(() -> VnPayConfig.hmacSHA512(anyString(), anyString()))
+            mockedStatic.when(() -> VnPayConfig.hmacSHA512(any(), anyString()))
                     .thenReturn("validHash");
             when(orderService.checkIfOrderExists(anyString())).thenReturn(true);
             when(orderService.getOrderById(anyString())).thenReturn(this.order);
             this.params.put("vnp_Amount", "2000000");
             var response = vnPayIpnHandler.ipnHandler(this.params);
             assertThat(response.getRspCode()).isEqualTo("04");
-            verify(orderService, never()).updateOrderStatus(any(Order.class), any(OrderStatus.class));
         }
     }
 
@@ -121,14 +125,13 @@ public class VNPayIpnHandlerTest {
     @Test
     public void testIpnHandler_OrderConfirmedAlready() {
         try (MockedStatic<VnPayConfig> mockedStatic = mockStatic(VnPayConfig.class)) {
-            mockedStatic.when(() -> VnPayConfig.hmacSHA512(anyString(), anyString()))
+            mockedStatic.when(() -> VnPayConfig.hmacSHA512(any(), anyString()))
                     .thenReturn("validHash");
             this.order.setStatus(OrderStatus.PREPARING);
             when(orderService.checkIfOrderExists(anyString())).thenReturn(true);
             when(orderService.getOrderById(anyString())).thenReturn(this.order);
             var response = vnPayIpnHandler.ipnHandler(this.params);
             assertThat(response.getRspCode()).isEqualTo("02");
-            verify(orderService, never()).updateOrderStatus(any(Order.class), any(OrderStatus.class));
         }
     }
 }

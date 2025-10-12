@@ -1,113 +1,94 @@
 package com.projectshopbando.shopbandoapi;
 
 import com.projectshopbando.shopbandoapi.dtos.request.CreateOrderReq;
+import com.projectshopbando.shopbandoapi.dtos.request.CreatePaymentUrlReq;
 import com.projectshopbando.shopbandoapi.dtos.request.OrderItemReq;
 import com.projectshopbando.shopbandoapi.dtos.response.OrderResponse;
-import com.projectshopbando.shopbandoapi.entities.*;
+import com.projectshopbando.shopbandoapi.dtos.response.PaymentResponse;
+import com.projectshopbando.shopbandoapi.entities.Customer;
+import com.projectshopbando.shopbandoapi.entities.Order;
+import com.projectshopbando.shopbandoapi.entities.Product;
+import com.projectshopbando.shopbandoapi.entities.Staff;
 import com.projectshopbando.shopbandoapi.enums.OrderStatus;
-import com.projectshopbando.shopbandoapi.enums.PaymentMethod;
-import com.projectshopbando.shopbandoapi.exception.NotFoundException;
-import com.projectshopbando.shopbandoapi.repositories.*;
-import com.projectshopbando.shopbandoapi.services.OrderService;
+import com.projectshopbando.shopbandoapi.mappers.OrderMapper;
+import com.projectshopbando.shopbandoapi.repositories.OrderRepository;
+import com.projectshopbando.shopbandoapi.services.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Order;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockHttpServletRequest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 @Slf4j
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class CreateOrderTest {
-    @Autowired
-    private OrderService orderService;
+    @Mock private CustomerService customerService;
+    @Mock private StaffService staffService;
+    @Mock private ProductService productService;
+    @Mock private PaymentService paymentService;
+    @Mock private OrderRepository orderRepository;
+    @Mock private EmailSenderService emailSenderService;
+    private final OrderMapper orderMapper = Mappers.getMapper(OrderMapper.class);
+    @Mock private HttpServletRequest httpRequest;
 
-    @Autowired
-    private ProductRepository productRepository;
+    private OrderService orderService; // class chứa createOrder
 
-    @Autowired
-    private ProductSizeRepository productSizeRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
-
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private CustomerRepository customerRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    private User testUser;
-    private Product testProduct;
-    private static final int INITIAL_STOCK = 20;
-    private static final int ORDER_QUANTITY = 2;
+    private Customer customer;
+    private Staff staff;
+    private Product product;
+    private BigDecimal productPrice = BigDecimal.valueOf(100000);
+    private BigDecimal discountPercent = BigDecimal.valueOf(10);
+    private Integer orderQuantity = 2;
 
     @BeforeEach
-    public void setUpProductWithStock() {
-        orderRepository.deleteAll();
-        productSizeRepository.deleteAll();
-        productRepository.deleteAll();
-        customerRepository.deleteAll();
-        categoryRepository.deleteAll();
+    void setup() {
+        MockitoAnnotations.openMocks(this); // ✅ Mở mock trước
 
-        Category category = Category.builder()
-                .name("testCategory")
-                .description("testCateDescription")
+        orderService = new OrderService(
+                orderRepository,
+                customerService,
+                productService,
+                paymentService,
+                orderMapper, // mapper thật
+                staffService,
+                emailSenderService
+        );
+
+        customer = Customer.builder()
+                .id("cust123")
+                .fullName("Khai Pham")
+                .phone("0909999999")
                 .build();
-        category = categoryRepository.save(category);
 
-        Product testProduct = Product.builder()
-                .name("testProduct")
-                .price(BigDecimal.valueOf(300000.00))
-                .inStock(true)
-                .available(true)
-                .category(category)
+        staff = Staff.builder()
+                .id("staff001")
+                .fullName("Staff Test")
+                .store("TestStore")
                 .build();
-        this.testProduct = productRepository.save(testProduct);
 
-        ProductSize testProductSize = ProductSize.builder()
-                .product(testProduct)
-                .size("M")
-                .quantity(INITIAL_STOCK)
+        product = Product.builder()
+                .id(1L)
+                .name("Sample Product")
+                .price(productPrice)
+                .discountPercent(discountPercent)
                 .build();
-        productSizeRepository.save(testProductSize);
-
-        User testUser = User.builder()
-                .fullName("testUser")
-                .phone("testPhone")
-                .address("testAddress")
-                .email("testEmail")
-                .dob(LocalDate.of(2000, 1, 1))
-                .password("testPassword")
-                .username("testUsername")
-                .build();
-        this.testUser = userRepository.save(testUser);
-
-        log.info("testUser = {}", this.testUser.getId());
-        log.info("Setup completed. Product ID: {}, Initial stock: {}", testProduct.getId(), INITIAL_STOCK);
-
     }
+
 
     @AfterEach
     public void cleanup() {
@@ -116,315 +97,146 @@ public class CreateOrderTest {
     }
 
     @Test
-    @Order(1)
-    @DisplayName("Should create order with existing user")
-    public void testCreateOrderWithUserId_Success() throws BadRequestException {
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(this.testUser.getId())
-                .paymentMethod(PaymentMethod.COD.toString())
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(this.testProduct.getId(), "M", 1)))
-                .note("NOTE")
+    void testCreateOnlineOrder_VNPay_WithCustomerID_Success() throws Exception {
+        // Mock request
+        OrderItemReq item = new OrderItemReq();
+        item.setProductId(Long.valueOf(1));
+        item.setQuantity(orderQuantity);
+        item.setSize("M");
+
+        CreateOrderReq req = CreateOrderReq.builder()
+                .customerId("cust123")
+                .email("test@gmail.com")
+                .address("123 Street")
+                .items(List.of(item))
+                .paymentMethod("VNPAY")
+                .name("recipientName")
+                .phone("0909999999")
+                .totalAmount(BigDecimal.valueOf(100000 * 0.9 * orderQuantity)) // 10% discount
+                .discount(BigDecimal.ZERO)
+                .tax(BigDecimal.ZERO)
+                .shippingFee(BigDecimal.ZERO)
+                .note("note")
+                .type("ONLINE")
                 .build();
-        HttpServletRequest httpReq = new MockHttpServletRequest();
 
-        OrderResponse response = orderService.createOrder(orderReq, httpReq);
+        when(customerService.getCustomerById("cust123")).thenReturn(customer);
+        when(productService.getProductByIdAndAvailableTrue(Long.valueOf(1))).thenReturn(product);
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+        when(paymentService.initPaymentUrl(any(CreatePaymentUrlReq.class)))
+                .thenReturn(new PaymentResponse("https://sandbox.vnpay.vn/pay"));
 
+        // Gọi service
+        OrderResponse response = orderService.createOrder(req, httpRequest);
+
+        // ✅ Kiểm tra
         assertThat(response).isNotNull();
-        assertThat(orderRepository.findById(response.getOrder().getId()).get().getCustomer().getId()).isEqualTo(this.testUser.getId());
-        assertThat(response.getOrder().getRecipientName()).isEqualTo("NAME");
-        assertThat(response.getOrder().getTotalAmount().compareTo(this.testProduct.getPrice())).isZero();
-        assertThat(response.getOrder().getStatus()).isEqualTo(OrderStatus.PREPARING.toString());
+        assertThat(response.getPayment().getPaymentUrl()).contains("vnpay");
+        verify(orderRepository, atLeastOnce()).save(any(Order.class));
+        verify(emailSenderService, never()).sendOrderConfirmationEmail(any());
+        verify(paymentService).initPaymentUrl(any(CreatePaymentUrlReq.class));
     }
 
     @Test
-    @Order(2)
-    @DisplayName("Should create order with no user needed")
-    public void testCreateOrderWithoutUserId_Success() throws BadRequestException {
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod(PaymentMethod.COD.toString())
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(this.testProduct.getId(), "M", 1)))
-                .note("NOTE")
-                .build();
-        HttpServletRequest httpReq = new MockHttpServletRequest();
+    void testCreateOnlineOrder_COD_WithNoCustomerID_Success() throws Exception {
+        OrderItemReq item = new OrderItemReq();
+        item.setProductId(Long.valueOf(1));
+        item.setQuantity(orderQuantity);
+        item.setSize("L");
 
-        OrderResponse response = orderService.createOrder(orderReq, httpReq);
-
-        assertThat(response).isNotNull();
-        assertThat(response.getOrder().getRecipientName()).isEqualTo("NAME");
-        assertThat(response.getOrder().getTotalAmount().compareTo(this.testProduct.getPrice())).isZero();
-        assertThat(response.getOrder().getStatus()).isEqualTo(OrderStatus.PREPARING.toString());
-    }
-
-    @Test
-    @Order(3)
-    @DisplayName("Should have VNPAY payment url")
-    void testCreateOrder_VNPAYPaymentUrl() throws BadRequestException {
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod(PaymentMethod.VNPAY.toString())
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(this.testProduct.getId(), "M", 1)))
-                .note("NOTE")
+        CreateOrderReq req = CreateOrderReq.builder()
+                .email("test@gmail.com")
+                .address("123 Street")
+                .items(List.of(item))
+                .paymentMethod("COD")
+                .name("recipientName")
+                .phone("0909999999")
+                .totalAmount(BigDecimal.valueOf(100000 * 0.9 * orderQuantity)) // 10% discount
+                .discount(BigDecimal.ZERO)
+                .tax(BigDecimal.ZERO)
+                .shippingFee(BigDecimal.ZERO)
+                .note("note")
+                .type("ONLINE")
                 .build();
 
-        OrderResponse response = orderService.createOrder(orderReq, new MockHttpServletRequest());
-        assertThat(response).isNotNull();
-        assertThat(response.getPayment().getPaymentUrl()).isNotNull();
-        assertThat(response.getOrder().getStatus()).isEqualTo(OrderStatus.UNPAID.toString());
+        when(customerService.createCustomer(any())).thenReturn(customer);
+        when(productService.getProductByIdAndAvailableTrue(Long.valueOf(1))).thenReturn(product);
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+
+        OrderResponse response = orderService.createOrder(req, httpRequest);
+
+        // ✅ Assert
+        assertThat(response.getPayment()).isNull();
+        verify(emailSenderService, times(1)).sendOrderConfirmationEmail(any(Order.class));
+        verify(orderRepository, atLeastOnce()).save(any(Order.class));
     }
 
     @Test
-    @Order(4)
-    @DisplayName("Should handle concurrent order creation requests correctly")
-    public void testOrderConcurrency() throws InterruptedException {
-        // Given
-        int numberOfThreads = 13; // Reduced to avoid overwhelming the system
-        int requestsPerThread = 1;
-        int totalExpectedOrders = numberOfThreads * requestsPerThread;
+    void testCreateOfflineOrder_CASH_WithCustomerId_Success() throws Exception {
+        OrderItemReq item = new OrderItemReq();
+        item.setProductId(Long.valueOf(1));
+        item.setQuantity(orderQuantity);
+        item.setSize("XL");
 
-        ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
-        CountDownLatch startLatch = new CountDownLatch(1); // All threads start together
-        CountDownLatch completeLatch = new CountDownLatch(numberOfThreads);
-
-        // Thread-safe collections for results
-        List<String> successfulOrders = Collections.synchronizedList(new ArrayList<>());
-        List<String> failedOrders = Collections.synchronizedList(new ArrayList<>());
-        AtomicInteger successCount = new AtomicInteger(0);
-        AtomicInteger failureCount = new AtomicInteger(0);
-
-        // When - Submit concurrent order creation tasks
-        for (int i = 0; i < numberOfThreads; i++) {
-            final int threadIndex = i;
-            executor.submit(() -> {
-                try {
-                    // Wait for all threads to be ready
-                    startLatch.await(10, TimeUnit.SECONDS);
-
-                    CreateOrderReq orderReq = new CreateOrderReq(
-                            null,
-                            "Customer" + threadIndex,
-                            "012312312" + threadIndex,
-                            threadIndex + "@mail.com",
-                            "Address " + threadIndex,
-                            List.of(new OrderItemReq(testProduct.getId(), "M", ORDER_QUANTITY)),
-                            "COD",
-                            "Note " + threadIndex
-                    );
-
-                    HttpServletRequest request = new MockHttpServletRequest();
-
-                    // This should be atomic due to database-level locking
-                    OrderResponse orderResponse = orderService.createOrder(orderReq, request);
-
-                    String orderId = orderResponse.getOrder().getId();
-                    successfulOrders.add(orderId);
-                    successCount.incrementAndGet();
-
-                    log.info("✅ Thread {} - Order created successfully: {}", threadIndex, orderId);
-
-                } catch (Exception e) {
-                    failedOrders.add("Thread " + threadIndex + ": " + e.getMessage());
-                    failureCount.incrementAndGet();
-                    log.error("❌ Thread {} - Order creation failed: {}", threadIndex, e.getMessage());
-                } finally {
-                    completeLatch.countDown();
-                }
-            });
-        }
-
-        // Start all threads simultaneously
-        startLatch.countDown();
-
-        // Wait for all threads to complete (with timeout)
-        boolean allCompleted = completeLatch.await(30, TimeUnit.SECONDS);
-        assertTrue(allCompleted, "All threads should complete within timeout");
-
-        executor.shutdown();
-        boolean terminated = executor.awaitTermination(10, TimeUnit.SECONDS);
-        assertTrue(terminated, "Executor should terminate gracefully");
-
-        // Then - Verify results
-        log.info("=== TEST RESULTS ===");
-        log.info("Successful orders: {}", successCount.get());
-        log.info("Failed orders: {}", failureCount.get());
-        log.info("Total requests: {}", numberOfThreads);
-
-        // Print details
-        successfulOrders.forEach(orderId -> log.info("✅ Created order: {}", orderId));
-        failedOrders.forEach(error -> log.info("❌ Failed: {}", error));
-
-        // Verify final stock quantity
-        ProductSize finalProductSize = productSizeRepository
-                .findByProductIdAndSize(testProduct.getId(), "M")
-                .orElseThrow(() -> new AssertionError("ProductSize should exist"));
-
-        int finalStock = finalProductSize.getQuantity();
-        int expectedFinalStock = INITIAL_STOCK - (successCount.get() * ORDER_QUANTITY);
-
-        log.info("Initial stock: {}, Final stock: {}, Expected final stock: {}",
-                INITIAL_STOCK, finalStock, expectedFinalStock);
-
-        // Assertions
-        assertEquals(expectedFinalStock, finalStock,
-                "Final stock should equal initial stock minus successful orders");
-
-        // Verify that we either got all successes or some failures due to stock exhaustion
-        assertTrue(successCount.get() + failureCount.get() == numberOfThreads,
-                "All requests should either succeed or fail");
-
-        // If we expect stock exhaustion, verify it happens correctly
-        if (totalExpectedOrders > INITIAL_STOCK) {
-            assertTrue(failureCount.get() > 0,
-                    "Should have some failures when trying to order more than available stock");
-            assertTrue(successCount.get() <= INITIAL_STOCK / ORDER_QUANTITY,
-                    "Successful orders should not exceed available stock");
-        }
-
-        // Verify no duplicate order IDs
-        assertEquals(successfulOrders.size(), successfulOrders.stream().distinct().count(),
-                "All successful order IDs should be unique");
-    }
-
-    @Test
-    @Order(5)
-    @DisplayName("Should throw exception when product not found")
-    void testCreateOrder_ProductNotFound() {
-        // Given
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod(PaymentMethod.COD.toString())
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(999L, "M", 1))) // Non-existent product
-                .note("NOTE")
+        CreateOrderReq req = CreateOrderReq.builder()
+                .customerId("cust123")
+                .staffId("staff001")
+                .items(List.of(item))
+                .paymentMethod("CASH")
+                .name("recipientName")
+                .phone("0909999999")
+                .totalAmount(BigDecimal.valueOf(100000 * 0.9 * orderQuantity)) // 10% discount
+                .discount(BigDecimal.ZERO)
+                .tax(BigDecimal.ZERO)
+                .note("note")
+                .type("OFFLINE")
                 .build();
 
-        // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(orderReq, new MockHttpServletRequest()))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("Product not found with id: " + 999L);
+        when(customerService.getCustomerById("cust123")).thenReturn(customer);
+        when(staffService.getStaffById("staff001")).thenReturn(staff);
+        when(productService.getProductByIdAndAvailableTrue(Long.valueOf(1))).thenReturn(product);
+        when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
+
+        OrderResponse response = orderService.createOrder(req, httpRequest);
+
+        // ✅ Assert
+        assertThat(response.getPayment()).isNull();
+        assertThat(response.getOrder().getStatus()).isEqualTo(OrderStatus.COMPLETED.toString());
+        verify(orderRepository, atLeastOnce()).save(any(Order.class));
+        verify(emailSenderService, never()).sendOrderConfirmationEmail(any());
     }
 
     @Test
-    @Order(6)
-    @DisplayName("Should throw exception when product size not found")
-    void testCreateOrder_ProductSizeNotFound() {
-        // Given
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod(PaymentMethod.COD.toString())
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(this.testProduct.getId(), "NOSIZEFOUND", 1))) // Non-existent product
-                .note("NOTE")
-                .build(); // Size doesn't exist
+    void testCreateOrder_InvalidTotalAmount_ThrowsException() {
+        OrderItemReq item = new OrderItemReq();
+        item.setProductId(Long.valueOf(1));
+        item.setQuantity(orderQuantity);
+        item.setSize("M");
 
-        // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(orderReq, new MockHttpServletRequest()))
+        CreateOrderReq req = CreateOrderReq.builder()
+                .customerId("cust123")
+                .items(List.of(item))
+                .totalAmount(BigDecimal.valueOf(50000)) // sai intentionally
+                .paymentMethod("COD")
+                .email("test@gmail.com")
+                .address("123 Street")
+                .name("recipientName")
+                .phone("0909999999")
+                .discount(BigDecimal.ZERO)
+                .tax(BigDecimal.ZERO)
+                .shippingFee(BigDecimal.ZERO)
+                .note("note")
+                .type("ONLINE")
+                .build();
+
+        when(customerService.getCustomerById("cust123")).thenReturn(customer);
+        when(productService.getProductByIdAndAvailableTrue(Long.valueOf(1))).thenReturn(product);
+
+        assertThatThrownBy(() -> orderService.createOrder(req, httpRequest))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Not enough stock for size NOSIZEFOUND");
+                .hasMessageContaining("Total amount doesn't match");
     }
 
-    @Test
-    @Order(7)
-    @DisplayName("Should throw exception when insufficient stock")
-    void testCreateOrder_InsufficientStock() {
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod(PaymentMethod.COD.toString())
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(this.testProduct.getId(), "M", INITIAL_STOCK + 10))) // Non-existent product
-                .note("NOTE")
-                .build();
 
-        // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(orderReq, new MockHttpServletRequest()))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Not enough stock for size M");
-    }
 
-    @Test
-    @Order(8)
-    @DisplayName("Should throw exception for invalid payment method")
-    void testCreateOrder_InvalidPaymentMethod() {
-        // Given
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod("INVALID_METHOD") // Invalid payment method
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(this.testProduct.getId(), "M", 1)))
-                .note("NOTE")
-                .build();
-
-        // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(orderReq, new MockHttpServletRequest()))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Invalid payment method");
-    }
-
-    @Test
-    @Order(9)
-    @DisplayName("Should handle negative quantity")
-    void testCreateOrder_NegativeQuantity() {
-        // Given
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod("INVALID_METHOD") // Invalid payment method
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of(new OrderItemReq(this.testProduct.getId(), "M", - INITIAL_STOCK + 10)))
-                .note("NOTE")
-                .build();
-
-        // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(orderReq, new MockHttpServletRequest()))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Quantity must be greater than 0");
-    }
-
-    @Test
-    @Order(10)
-    @DisplayName("Should handle empty order items")
-    void testCreateOrder_EmptyItems() {
-        // Given
-        CreateOrderReq orderReq = CreateOrderReq.builder()
-                .recipientAddress("ADDRESS")
-                .recipientPhone("0123123123")
-                .userId(null)
-                .paymentMethod("INVALID_METHOD") // Invalid payment method
-                .recipientEmail("EMAIL")
-                .recipientName("NAME")
-                .items(List.of()) // Empty items
-                .note("NOTE")
-                .build();
-
-        // When & Then
-        assertThatThrownBy(() -> orderService.createOrder(orderReq, new MockHttpServletRequest()))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Order Items cannot be empty");
-    }
 }

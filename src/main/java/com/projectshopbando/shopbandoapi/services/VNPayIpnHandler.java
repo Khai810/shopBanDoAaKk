@@ -65,7 +65,7 @@ public class VNPayIpnHandler {
 
             Order order = orderService.getOrderById(orderId);
 
-            if (!order.getTotalAmount().equals(amount)) {
+            if (order.getTotalAmount().compareTo(amount) != 0) {
                 return IpnResConst.INVALID_AMOUNT;
             }
             if (!order.getStatus().equals(OrderStatus.UNPAID)) {
