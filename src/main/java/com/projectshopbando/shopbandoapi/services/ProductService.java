@@ -79,6 +79,7 @@ public class ProductService {
         ProductSize productSize = productSizeRepository.findByProductIdAndSize(productId, size)
                 .orElseThrow(() -> new NotFoundException("Product size not found with id: " + productId + "size: " + size));
         productSize.setQuantity(productSize.getQuantity() + quantity);
+        productSizeRepository.save(productSize);
     }
 
     @Transactional

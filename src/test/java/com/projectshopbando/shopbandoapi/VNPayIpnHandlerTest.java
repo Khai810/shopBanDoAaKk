@@ -48,6 +48,7 @@ public class VNPayIpnHandlerTest {
     private Order order;
 
     private Map<String, String> params;
+
     @BeforeEach
     public void setup() {
         this.order = OnlineOrder.builder()
@@ -132,6 +133,22 @@ public class VNPayIpnHandlerTest {
             when(orderService.getOrderById(anyString())).thenReturn(this.order);
             var response = vnPayIpnHandler.ipnHandler(this.params);
             assertThat(response.getRspCode()).isEqualTo("02");
+        }
+    }
+
+    @org.junit.jupiter.api.Order(6)
+    @Test
+    public void testIpnHandler_CancelOrderOnFailedPayment() {
+        try (MockedStatic<VnPayConfig> mockedStatic = mockStatic(VnPayConfig.class)) {
+            mockedStatic.when(() -> VnPayConfig.hmacSHA512(any(), anyString()))
+                    .thenReturn("validHash");
+            when(orderService.checkIfOrderExists(anyString())).thenReturn(true);
+            when(orderService.getOrderById(anyString())).thenReturn(this.order);
+            doNothing().when(orderService).cancelOrder(anyString());
+            this.params.put("vnp_ResponseCode", "24"); // Simulate failed payment
+            var response = vnPayIpnHandler.ipnHandler(this.params);
+            assertThat(response.getRspCode()).isEqualTo("00");
+            verify(orderService).cancelOrder(this.order.getId());
         }
     }
 }

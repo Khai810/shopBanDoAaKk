@@ -53,8 +53,12 @@ public class OrderService {
         return order.getStatus();
     }
 
+    @Transactional
     public void updateOrderStatus(String id, OrderStatus status) {
         Order order = orderRepository.findById(id).orElseThrow(() -> new NotFoundException(id));
+        if(!order.getStatus().equals(OrderStatus.CANCELLED) && status.equals(OrderStatus.CANCELLED)) {
+            cancelOrder(id);
+        }
         order.setStatus(status);
         orderRepository.save(order);
     }
