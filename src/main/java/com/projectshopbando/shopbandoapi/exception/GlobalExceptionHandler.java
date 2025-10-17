@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.List;
 
@@ -45,15 +46,6 @@ public class GlobalExceptionHandler {
                 .body(res);
     }
 
-//    @ExceptionHandler(OptimisticLockingFailureException.class)
-//    public ResponseEntity<ResponseObject<?>> handleOptimisticLockingFailure(OptimisticLockingFailureException e) {
-//        ResponseObject<?> error = ResponseObject.builder()
-//                .status("error")
-//                .message("Unable to complete order due to high demand. Please try again.")
-//                .build();
-//
-//        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
-//    }
 
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

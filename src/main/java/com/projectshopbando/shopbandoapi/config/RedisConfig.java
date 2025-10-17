@@ -16,12 +16,12 @@ import java.time.Duration;
 @EnableCaching
 public class RedisConfig {
     @Bean
-    public RedisTemplate<String, Integer> redisTemplate(RedisConnectionFactory factory) {
-        RedisTemplate<String, Integer> template = new RedisTemplate<>();
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
 
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericToStringSerializer<>(Integer.class));
+        template.setValueSerializer(new GenericToStringSerializer<>(Object.class));
         return template;
     }
 

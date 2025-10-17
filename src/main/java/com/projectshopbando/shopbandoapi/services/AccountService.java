@@ -73,6 +73,16 @@ public class AccountService {
         accountRepository.save(account);
         return true;
     }
+
+    public Account getAccountByCustomerId(String customerId){
+        return accountRepository.findByCustomer_Id(customerId)
+                .orElseThrow(() -> new NotFoundException("Account not found with customer id: " + customerId));
+    }
+
+    public Account getAccountByStaffId(String staffId){
+        return accountRepository.findByStaff_Id(staffId)
+                .orElseThrow(() -> new NotFoundException("Account not found with staff id: " + staffId));
+    }
 //
 //    public Account updateAccount(UpdateAccountReq request, String id){
 //        Account user = accountRepository.findById(id).orElseThrow(() -> new NotFoundException("Account not found with id: " + id));

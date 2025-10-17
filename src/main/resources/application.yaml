@@ -45,6 +45,8 @@ frontend:
 
 jwt:
   signerKey: QSteYc1j62GRm00tZnCI3Xj/s3s28uVxr51yA3zl6Aa53UqaO9XeLS65XuKtAA2E
+  refreshable-duration: 30 # minutes
+  valid-duration: 6 # minutes
 
 cloudinary:
   cloud_name: dktfi8vww
