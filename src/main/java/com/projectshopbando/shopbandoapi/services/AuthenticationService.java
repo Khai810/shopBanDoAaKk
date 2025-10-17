@@ -86,7 +86,6 @@ public class AuthenticationService {
         if(signedJWT.getJWTClaimsSet().getClaim("userType").equals("CUSTOMER")) {
             account = accountService.getAccountByCustomerId(subjectId);
         } else if(signedJWT.getJWTClaimsSet().getClaim("userType").equals("STAFF")) {
-            String staffId = signedJWT.getJWTClaimsSet().getSubject();
             account = accountService.getAccountByStaffId(subjectId);
         } else {
             throw new UnauthorizedException("Invalid user type");
