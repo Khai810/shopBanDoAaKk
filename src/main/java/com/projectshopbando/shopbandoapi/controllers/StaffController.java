@@ -2,6 +2,7 @@ package com.projectshopbando.shopbandoapi.controllers;
 
 
 import com.projectshopbando.shopbandoapi.dtos.request.CreateStaffReq;
+import com.projectshopbando.shopbandoapi.dtos.request.UpdateStaffReq;
 import com.projectshopbando.shopbandoapi.dtos.response.ResponseObject;
 import com.projectshopbando.shopbandoapi.mappers.StaffMapper;
 import com.projectshopbando.shopbandoapi.services.StaffService;
@@ -53,6 +54,17 @@ public class StaffController {
                         .build()
         );
 
+    }
+
+    @PreAuthorize("hasRole('ADMIN') || hasRole('STAFF') || #id == authentication.name")
+    @PutMapping("/{id}")
+    public ResponseEntity<ResponseObject<?>> updateStaff(@PathVariable String id, @RequestBody UpdateStaffReq req){
+        return ResponseEntity.status(HttpStatus.OK).body(
+                ResponseObject.builder()
+                        .status("success")
+                        .data(staffMapper.toStaffDTO(staffService.updateStaff(id, req)))
+                        .build()
+        );
     }
 
 }

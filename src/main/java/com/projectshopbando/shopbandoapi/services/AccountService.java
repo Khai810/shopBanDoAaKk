@@ -2,6 +2,7 @@ package com.projectshopbando.shopbandoapi.services;
 
 import com.projectshopbando.shopbandoapi.dtos.request.ChangePasswordReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreateAccountReq;
+import com.projectshopbando.shopbandoapi.dtos.request.UpdateAccountReq;
 import com.projectshopbando.shopbandoapi.entities.Account;
 import com.projectshopbando.shopbandoapi.entities.Customer;
 import com.projectshopbando.shopbandoapi.entities.Staff;
@@ -9,7 +10,6 @@ import com.projectshopbando.shopbandoapi.enums.Roles;
 import com.projectshopbando.shopbandoapi.exception.NotFoundException;
 import com.projectshopbando.shopbandoapi.mappers.AccountMapper;
 import com.projectshopbando.shopbandoapi.repositories.AccountRepository;
-import com.projectshopbando.shopbandoapi.repositories.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -83,10 +83,10 @@ public class AccountService {
         return accountRepository.findByStaff_Id(staffId)
                 .orElseThrow(() -> new NotFoundException("Account not found with staff id: " + staffId));
     }
-//
-//    public Account updateAccount(UpdateAccountReq request, String id){
-//        Account user = accountRepository.findById(id).orElseThrow(() -> new NotFoundException("Account not found with id: " + id));
-//        accountMapper.toUpdateAccount(user, request);
-//        return accountRepository.save(user);
-//    }
+
+    public Account updateAccount(UpdateAccountReq request, String id){
+        Account account = accountRepository.findById(id).orElseThrow(() -> new NotFoundException("Account not found with id: " + id));
+        accountMapper.toUpdateAccount(account, request);
+        return accountRepository.save(account);
+    }
 }

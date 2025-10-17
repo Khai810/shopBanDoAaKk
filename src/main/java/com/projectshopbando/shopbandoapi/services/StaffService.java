@@ -2,6 +2,8 @@ package com.projectshopbando.shopbandoapi.services;
 
 import com.projectshopbando.shopbandoapi.dtos.request.CreateAccountReq;
 import com.projectshopbando.shopbandoapi.dtos.request.CreateStaffReq;
+import com.projectshopbando.shopbandoapi.dtos.request.UpdateAccountReq;
+import com.projectshopbando.shopbandoapi.dtos.request.UpdateStaffReq;
 import com.projectshopbando.shopbandoapi.entities.Staff;
 import com.projectshopbando.shopbandoapi.mappers.StaffMapper;
 import com.projectshopbando.shopbandoapi.repositories.StaffRepository;
@@ -40,5 +42,13 @@ public class StaffService {
     public Page<Staff> getAllStaffs(int page, int size, String search){
         Pageable pageable = PageRequest.of(page, size);
         return staffRepository.findAllStaffWithSearch(search, pageable);
+    }
+
+    public Staff updateStaff(String id, UpdateStaffReq req) {
+        Staff staff = getStaffById(id);
+        staffMapper.updateStaff(staff, req);
+        UpdateAccountReq updateAccountReq = new UpdateAccountReq(req.getEmail(), req.getRole(), req.getDob());
+        accountService.updateAccount(updateAccountReq, staff.getAccount().getId());
+        return staffRepository.save(staff);
     }
 }
