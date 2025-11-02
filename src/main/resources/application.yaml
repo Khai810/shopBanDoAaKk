@@ -1,38 +1,43 @@
 server:
   port: 8080
+
 spring:
   application:
     name: shopBanDo-api
 
   datasource:
-    url: jdbc:mysql://localhost:3306/shopBanDo?createDatabaseIfNotExist=true
-    username: root
-    password: Khai8101111@
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   data:
     redis:
-      port: 6379
-      host: localhost
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
 
   cache:
     type: redis
 
   jpa:
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL}
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${JPA_DDL_AUTO}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
   mvc:
     servlet:
       path: /api
 
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: pqk12375@gmail.com
-    password: onto rbcz wfyk oswh
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -41,14 +46,21 @@ spring:
             enable: true
 
 frontend:
-  url: http://localhost:3000
+  url: ${FRONTEND_URL}
 
 jwt:
-  signerKey: QSteYc1j62GRm00tZnCI3Xj/s3s28uVxr51yA3zl6Aa53UqaO9XeLS65XuKtAA2E
-  refreshable-duration: 30 # minutes
-  valid-duration: 15 # minutes
+  signerKey: ${JWT_SIGNER_KEY}
+  refreshable-duration: ${JWT_REFRESH_DURATION}
+  valid-duration: ${JWT_VALID_DURATION}
 
 cloudinary:
-  cloud_name: dktfi8vww
-  api_key: 362645982773694
-  secret_key: wT0F5v_ijVgS4vQAfI-iYLjvRzI
+  cloud_name: ${CLOUDINARY_CLOUD_NAME}
+  api_key: ${CLOUDINARY_API_KEY}
+  secret_key: ${CLOUDINARY_SECRET_KEY}
+
+logging:
+  level:
+    root: INFO
+    com.shopbando: DEBUG
+  file:
+    name: /app/logs/application.log
